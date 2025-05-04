@@ -17,7 +17,7 @@ def download_xapk() -> str:
     if len(apk_dir) > 0:
         return apk_dir[0].replace("\\", "/")
 
-    apk_url = "https://d.apkpure.net/b/XAPK/com.nexon.bluearchive?version=latest&nc=arm64-v8a&sv=24"
+    apk_url = "https://d.apkpure.net/b/XAPK/com.YostarJP.BlueArchive?version=latest&nc=arm64-v8a&sv=24"
     notice("Downloading XAPK...")
     apk_req = FileDownloader(apk_url, request_method="get", use_cloud_scraper=True, verbose=True)
     apk_data = apk_req.get_response(True)
