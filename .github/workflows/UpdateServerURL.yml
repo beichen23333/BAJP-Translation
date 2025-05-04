@@ -54,7 +54,7 @@ jobs:
       - name: Trigger APK source update using push
         if: env.update_detected == 'true'
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPAkpSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git clone "$TARGET_REPO_URL" BAJPAkpSrc
           date > BAJPAkpSrc/.date
