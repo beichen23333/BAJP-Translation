@@ -13,9 +13,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          repository: your-source-repo-owner/your-source-repo-name  # 源仓库的路径
-          token: ${{ secrets.GITHUB_TOKEN }}  # 使用默认的 GITHUB_TOKEN 或自定义的 Personal Access Token
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,25 +27,15 @@ jobs:
       - name: Download Excel.zip
         run: |
           python download_excel.py --env_file ./ba.env --output_file ./Excel.zip
-          if [ ! -f "Excel.zip" ]; then
-            echo "Excel.zip not found. Exiting."
-            exit 1
-          fi
 
       - name: Commit and push Excel.zip
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/beichen23333/BAJPApkSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BAJPApkSrc
           cd BAJPApkSrc
-          if [ ! -f "Excel.zip" ]; then
-            echo "Excel.zip not found in the target repository. Adding it."
-            cp ../Excel.zip .
-            git add Excel.zip
-            git commit -m "Download and deploy" || echo "No changes to commit."
-            git push origin
-          else
-            echo "Excel.zip already exists in the target repository. Skipping."
-          fi
+          git add Excel.zip
+          git commit -m "Download and deploy" || echo "No changes to commit."
+          git push origin
