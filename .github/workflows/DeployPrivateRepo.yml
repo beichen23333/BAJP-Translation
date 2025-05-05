@@ -1,0 +1,48 @@
+name: Deploy to Private Repository
+
+on:
+  push:
+    branches:
+      - main  # 您的分支名称
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # 如果您有依赖文件
+
+      - name: Run script
+        run: |
+          python build_excel_zip.py --excel_input_path Excel.zip --repl_input_dir ./Excel --temp_output_dir ./temp_output
+
+      - name: Deploy to Private Repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 配置 Git 用户信息
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          # 添加远程仓库（替换为您自己的仓库地址）
+          git remote add private-repo https://x-access-token:${GITHUB_TOKEN}@github.com/beichen23333/BA-Text.git
+
+          # 切换到目标分支（例如 main）
+          git checkout main
+
+          # 将临时输出文件夹的内容推送到目标仓库
+          cp -r ./temp_output/* ./  # 假设 temp_output 文件夹在根目录下
+          git add .
+          git commit -m "Deploy"
+          git push private-repo main
