@@ -25,6 +25,9 @@ def download_excel_zip(env_file: Path, output_file: Path):
     if response.status_code != 200:
         raise ConnectionError(f"Failed to download {excel_zip_url}. Status code: {response.status_code}")
     
+    # 确保输出目录存在
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
     # 保存文件
     with open(output_file, "wb") as f:
         f.write(response.content)
@@ -36,7 +39,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Download Excel.zip from BA_SERVER_URL.")
     parser.add_argument("--env_file", type=Path, default="./ba.env", help="Path to the ba.env file.")
-    parser.add_argument("--output_file", type=Path, default="./Excel.zip", help="Path to save the downloaded Excel.zip file.")
+    parser.add_argument("--output_file", type=Path, default="./BAJPApkSrc/Excel.zip", help="Path to save the downloaded Excel.zip file.")
     args = parser.parse_args()
 
     download_excel_zip(args.env_file, args.output_file)
