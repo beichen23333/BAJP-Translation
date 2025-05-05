@@ -36,4 +36,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git add Excel.zip
           git commit -m "Download and deploy Excel.zip" || echo "No changes to commit."
-          git push https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/beichen23333/BA-Chinese-Translation.git main
+          git push https://x-access-token:${secrets.APK_SRC_REPO}@github.com/beichen23333/BA-Chinese-Translation.git main
