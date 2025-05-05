@@ -26,7 +26,7 @@ jobs:
 
       - name: Download Excel.zip
         run: |
-          python download_excel_zip.py --env_file ./ba.env --output_file ./Excel.zip
+          python download_excel.py --env_file ./ba.env --output_file ./Excel.zip
 
       - name: Commit and push Excel.zip
         env:
