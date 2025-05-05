@@ -24,18 +24,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Download Excel.zip
-        run: |
-          python download_excel.py --env_file ./ba.env --output_file ./BAJPApkSrc/Excel.zip
-
-      - name: Commit and push
+      - name: Clone target repository
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPAkpSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
+          # 如果 BAJPAkpSrc 目录已存在，先删除
+          if [ -d "BAJPAkpSrc" ]; then
+            rm -rf BAJPAkpSrc
+          fi
+          # 克隆目标仓库
           git clone "$TARGET_REPO_URL" BAJPAkpSrc
+
+      - name: Download Excel.zip
+        run: |
+          python download_excel.py --env_file ./ba.env --output_file ./BAJPAkpSrc/Excel.zip
+          # 检查文件是否下载成功
+          if [ ! -f "./BAJPAkpSrc/Excel.zip" ]; then
+            echo "Error: Excel.zip file not found after download."
+            exit 1
+          fi
+
+      - name: Commit and push
+        run: |
           cd BAJPAkpSrc
           git add Excel.zip
-          git commit -m "Update date"
+          git commit -m "Update Excel.zip" || echo "No changes to commit."
           git push origin
