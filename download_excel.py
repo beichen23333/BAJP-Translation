@@ -14,9 +14,9 @@ def download_excel_zip(env_file: Path, output_file: Path):
             env_vars[key] = value
 
     # 获取 BA_SERVER_URL 并拼接路径
-    ba_server_url = env_vars.get("BA_SERVER_URL")
+    ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL")
     if not ba_server_url:
-        raise ValueError("BA_SERVER_URL not found in the environment file.")
+        raise ValueError("ADDRESSABLE_CATALOG_URL not found in the environment file.")
     
     excel_zip_url = f"{ba_server_url}/TableBundles/Excel.zip"
     
