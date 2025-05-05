@@ -1,4 +1,4 @@
-name: Download and Deploy
+name: Download and Deploy Excel.zip
 
 on:
   push:
@@ -26,14 +26,14 @@ jobs:
 
       - name: Download Excel.zip
         run: |
-          python download_excel.py --env_file ./ba.env --output_file ./Excel.zip
+          python download_excel_zip.py --env_file ./ba.env --output_file ./Excel.zip
 
       - name: Commit and push Excel.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git add Excel.zip
           git commit -m "Download and deploy Excel.zip" || echo "No changes to commit."
-          git push origin main
+          git push https://x-access-token:${PERSONAL_ACCESS_TOKEN}@github.com/beichen23333/BA-Chinese-Translation.git main
