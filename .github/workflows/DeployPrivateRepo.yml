@@ -24,24 +24,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 如果您有依赖文件
 
-      - name: Clone target repository to temporary directory
-        env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-          TEMP_DIR=$(mktemp -d)
-          echo "Temporary directory created at $TEMP_DIR"
-
-          # 克隆目标仓库到临时目录
-          git clone "$TARGET_REPO_URL" "$TEMP_DIR/BAJPAkpSrc"
-
-          # 将 Excel.zip 文件复制到当前工作目录
-          cp "$TEMP_DIR/BAJPAkpSrc/Excel.zip" ./Excel.zip
-
-          # 删除临时目录
-          rm -rf "$TEMP_DIR"
-
       - name: Run script
         run: |
           python build_excel_zip.py --excel_input_path ./Excel.zip --repl_input_dir ./Excel --temp_output_dir ./temp_output
