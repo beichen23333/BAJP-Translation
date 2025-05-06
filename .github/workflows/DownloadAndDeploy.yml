@@ -29,9 +29,11 @@ jobs:
           python download_excel.py --env_file ./ba.env --output_file ./Excel.zip
 
       - name: Commit and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.APK_SRC_REPO }}  # 使用 APK_SRC_REPO 作为访问令牌
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add Excel.zip
           git commit -m "Update Excel.zip" || echo "No changes to commit."
-          git push origin
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/beichen23333/BA-Chinese-Translation.git
