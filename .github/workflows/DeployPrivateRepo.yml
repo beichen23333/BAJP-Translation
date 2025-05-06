@@ -35,8 +35,8 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BAJPApkSrc
-          cd BAJPApkSrc
-          cp -r ./temp_output/* ./
-          git add .
-          git commit -m "Deploy" || echo "No changes to commit."
-          git push private-repo main
+          cd BAJPApkSrc  # 进入克隆的仓库目录
+          cp -r ../temp_output/* .  # 将 temp_output 内的文件复制到克隆的仓库目录
+          git add .  # 添加所有文件
+          git commit -m "Deploy" || echo "No changes to commit."  # 提交更改
+          git push origin main  # 推送到目标仓库的 main 分支
