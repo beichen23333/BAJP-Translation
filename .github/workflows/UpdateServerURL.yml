@@ -55,7 +55,7 @@ jobs:
         if: env.update_detected == 'true'
         run: |
           curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.APK_SRC_REPO }}" \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
             -d '{"repository_dispatch_type":"DEPLOY_TRIGGER"}' \
