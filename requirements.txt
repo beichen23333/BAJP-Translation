@@ -4,3 +4,4 @@ cloudscraper
 pycryptodome
 UnityPy
 pyaxmlparser
+flatbuffers
