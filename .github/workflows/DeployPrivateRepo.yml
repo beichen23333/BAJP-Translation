@@ -36,9 +36,8 @@ jobs:
           git config --global user.name "GitHub Actions"
           # 添加目标仓库的远程地址
           git remote add private-repo https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
-
           # 切换到目标分支（例如 main）
-          git checkout main
+          git checkout main || git checkout -b main  # 如果分支不存在，则创建分支
 
           # 将临时输出文件夹的内容推送到目标仓库
           cp -r ./temp_output/* ./  # 假设 temp_output 文件夹在根目录下
