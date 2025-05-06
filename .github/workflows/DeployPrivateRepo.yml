@@ -32,7 +32,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git remote add private-repo https://x-access-token:${GITHUB_TOKEN}@github.com/beichen23333/BA-Text.git
+          # 添加目标仓库的远程地址
+          git remote add private-repo https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
 
           # 切换到目标分支（例如 main）
           git checkout main
@@ -40,5 +41,5 @@ jobs:
           # 将临时输出文件夹的内容推送到目标仓库
           cp -r ./temp_output/* ./  # 假设 temp_output 文件夹在根目录下
           git add .
-          git commit -m "Deploy"
+          git commit -m "Deploy" || echo "No changes to commit."
           git push private-repo main
