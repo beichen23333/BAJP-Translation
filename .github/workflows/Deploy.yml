@@ -1,8 +1,9 @@
 name: Deploy
 on:
+  workflow_dispatch:
+  push:
   repository_dispatch:
-    types:
-      - DEPLOY_TRIGGER
+    types: [run-deployment]
 permissions:
   contents: write
 jobs:
@@ -35,4 +36,4 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add ./downloads/*
           git commit -m "Update Excel.zip and ExcelDB.db" || echo "No changes to commit."
-          git push https://x-access-token:${{secrets.APK_SRC_REPO}}@github.com/beichen23333/BAJPApkSrc.git
+          git push https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
