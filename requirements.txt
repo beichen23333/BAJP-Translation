@@ -4,4 +4,3 @@ cloudscraper
 pycryptodome
 UnityPy
 pyaxmlparser
-repacker
