@@ -5,6 +5,7 @@ on:
     branches:
       - main  # 您的分支名称
   workflow_dispatch:  # 允许手动触发
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,6 +23,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 如果您有依赖文件
+
+      - name: Clone Excel.zip from remote repository
+        run: |
+          # 克隆远程仓库中的 Excel.zip 文件
+          git clone --depth 1 https://github.com/beichen23333/BAJPApkSrc.git BAJPApkSrc_clone
+          cp BAJPApkSrc_clone/Excel.zip ./Excel.zip
+          rm -rf BAJPApkSrc_clone  # 删除克隆的目录以节省空间
 
       - name: Run script
         run: |
