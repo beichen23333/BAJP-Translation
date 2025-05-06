@@ -1,0 +1,38 @@
+name: Deploy
+on:
+  repository_dispatch:
+    types:
+      - DEPLOY_TRIGGER
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Download Excel.zip and ExcelDB.db
+        run: |
+          python download_files.py --env_file ./ba.env --output_dir ./downloads
+
+      - name: Commit and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add ./downloads/*
+          git commit -m "Update Excel.zip and ExcelDB.db" || echo "No changes to commit."
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/beichen23333/BAJPApkSrc.git
