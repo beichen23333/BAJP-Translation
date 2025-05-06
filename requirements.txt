@@ -1,7 +1,0 @@
-xxhash
-requests
-cloudscraper
-pycryptodome
-UnityPy
-pyaxmlparser
-flatbuffers
