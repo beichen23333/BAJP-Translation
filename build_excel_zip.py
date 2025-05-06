@@ -10,6 +10,12 @@ from lib.encryption import zip_password
 import shutil
 from collections import defaultdict
 
+def apply_replacements(source_file: Path, repl_file: Path) -> Path:
+    # 示例：简单地将替换文件的内容复制到目标文件
+    out_file = source_file.parent / f"{source_file.stem}_replaced.bytes"
+    shutil.copy(repl_file, out_file)
+    return out_file
+
 def main(excel_input_path: Path, repl_input_dir: Path, temp_output_dir: Path) -> None:
     import setup_flatdata
     packer = TableRepackerImpl('Extracted.FlatData')
@@ -43,9 +49,11 @@ def main(excel_input_path: Path, repl_input_dir: Path, temp_output_dir: Path) ->
                             tf.write(of.read())
                     out_file.unlink()
         
-        # 将处理后的文件复制到临时输出目录
+        # 确保 temp_output_dir 存在
         if not temp_output_dir.exists():
             temp_output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 将处理后的文件复制到 temp_output_dir
         for file in temp_extract_path.iterdir():
             shutil.copy(file, temp_output_dir / file.name)
     
@@ -54,3 +62,11 @@ def main(excel_input_path: Path, repl_input_dir: Path, temp_output_dir: Path) ->
         shutil.rmtree(temp_dir)
     
     print(f"Outputed modified files to {temp_output_dir}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Build Excel.zip and apply replacements.")
+    parser.add_argument("--excel_input_path", type=Path, required=True, help="Path to the Excel.zip file.")
+    parser.add_argument("--repl_input_dir", type=Path, required=True, help="Path to the replacements directory.")
+    parser.add_argument("--temp_output_dir", type=Path, required=True, help="Path to the temporary output directory.")
+    args = parser.parse_args()
+    main(args.excel_input_path, args.repl_input_dir, args.temp_output_dir)
