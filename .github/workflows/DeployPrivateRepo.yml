@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main  # 您的分支名称
-
+  workflow_dispatch:  # 允许手动触发
 jobs:
   deploy:
     runs-on: ubuntu-latest
