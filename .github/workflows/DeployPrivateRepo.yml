@@ -25,7 +25,7 @@ jobs:
 
       - name: Run script
         run: |
-          python build_excel_zip.py --excel_input_path Excel.zip --repl_input_dir ./Excel --temp_output_dir ./temp_output
+          python build_excel_zip.py --excel_input_path ./Excel.zip --repl_input_dir ./Excel --temp_output_dir ./temp_output
 
       - name: Deploy to Private Repository
         env:
