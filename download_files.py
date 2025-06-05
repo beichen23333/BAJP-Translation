@@ -5,7 +5,7 @@ from pathlib import Path
 def download_file(url: str, output_file: Path):
     response = requests.get(url)
     if response.status_code != 200:
-        raise ConnectionError(f"Failed to download {url}. Status code: {response.status_code}")
+        raise ConnectionError(f"Failed to download {url} Status code: {response.status_code}")
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "wb") as f:
         f.write(response.content)
