@@ -1,7 +1,10 @@
+name: Update Files
+
 on:
   schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch:
+    - cron: "0 * * * *"  # 每小时运行一次
+  workflow_dispatch:  # 允许手动触发
+
 permissions:
   contents: write
 
@@ -24,17 +27,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Download Excel.zip and ExcelDB.db
-        run: |
-          python download_files.py --env_file ./ba.env --output_dir ./downloads
 
-      - name: Commit and push
+      - name: Download ExcelDB.db and unpack it
+        run: |
+          python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
+
+      - name: Commit and push unpacked files
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BAJPApkSrc
-          git add ./downloads/*
-          git commit -m "Update date"
+          # 只提交解包后的文件
+          cp -r ./temp/* BAJPApkSrc/
+          cd BAJPApkSrc
+          git add .
+          git commit -m "Update unpacked files"
           git push origin
