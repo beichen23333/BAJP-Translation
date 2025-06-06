@@ -27,7 +27,7 @@ def unpack_json_from_db(db_path: Path, output_dir: Path):
 
     for table_info in tables:
         table_name = table_info[0]
-        table_type = table_name.replace("DBSchema", "ExcelTable")
+        table_type = table_name.replace("DBSchema", "Excel")
         json_path = output_dir / f"{table_type}.json"
 
         # 获取表的列信息
