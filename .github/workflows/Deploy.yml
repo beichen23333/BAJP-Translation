@@ -34,19 +34,19 @@ jobs:
         run: |
           python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
 
-      - name: Copy generated FlatData to BAJPAkpSrc/ExcelDB/FlatData
+      - name: Copy generated FlatData to BAJPApkSrc/ExcelDB/FlatData
         run: |
-          mkdir -p BAJPAkpSrc/ExcelDB/FlatData
-          cp -r Extracted/FlatData/* BAJPAkpSrc/ExcelDB/FlatData/
+          mkdir -p BAJPApkSrc/ExcelDB/FlatData
+          cp -r Extracted/FlatData/* BAJPApkSrc/ExcelDB/FlatData/
 
       - name: Commit and push generated files
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPAkpSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git clone "$TARGET_REPO_URL" BAJPAkpSrc
-          cd BAJPAkpSrc
+          git clone "$TARGET_REPO_URL" BAJPApkSrc
+          cd BAJPApkSrc
           git add .
           git commit -m "Update generated FlatData files"
           git push origin
