@@ -57,8 +57,8 @@ def unpack_json_from_db(db_path: Path, output_dir: Path):
 
                         # 动态获取 FlatBuffers 对象的字段
                         for field_name in dir(flatbuffer_obj):
-                            if not field_name.startswith("__") and callable(getattr(flatbuffer_obj, field_name)):
-                                entry[field_name] = getattr(flatbuffer_obj, field_name)()
+                            if not field_name.startswith("__") and not callable(getattr(flatbuffer_obj, field_name)):
+                                entry[field_name] = getattr(flatbuffer_obj, field_name)
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
                 else:
