@@ -110,4 +110,4 @@ if __name__ == "__main__":
     parser.add_argument("--temp_dir", type=Path, default="./temp", help="Temporary directory to unpack the files.")
     args = parser.parse_args()
     
-    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp
+    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir)
