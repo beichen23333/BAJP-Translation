@@ -54,15 +54,11 @@ def unpack_json_from_db(db_path: Path, output_dir: Path):
                             print(f"Warning: FlatBuffers class for {table_type} not found. Skipping this table.")
                             break
                         flatbuffer_obj = getattr(flatbuffer_class, "GetRootAs")(bytes_data, 0)
-                        
-                        # 提取 FlatBuffers 中的字段
-                        for field in columns:
-                            if field != "Bytes":
-                                accessor = getattr(flatbuffer_obj, field, None)
-                                if callable(accessor):
-                                    entry[field] = accessor()
-                                else:
-                                    entry[field] = None
+
+                        # 动态获取 FlatBuffers 对象的字段
+                        for field_name in dir(flatbuffer_obj):
+                            if not field_name.startswith("__") and callable(getattr(flatbuffer_obj, field_name)):
+                                entry[field_name] = getattr(flatbuffer_obj, field_name)()
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
                 else:
