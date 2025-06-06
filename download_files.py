@@ -27,7 +27,7 @@ def unpack_json_from_db(db_path: Path, output_dir: Path):
 
     for table_info in tables:
         table_name = table_info[0]
-        table_type = table_name.replace("DBSchema", "Excel")
+        table_type = table_name.replace("DBSchema", "ExcelTable")
         json_path = output_dir / f"{table_type}.json"
 
         # 获取表的列信息
@@ -110,4 +110,4 @@ if __name__ == "__main__":
     parser.add_argument("--temp_dir", type=Path, default="./temp", help="Temporary directory to unpack the files.")
     args = parser.parse_args()
     
-    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir)
+    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp
