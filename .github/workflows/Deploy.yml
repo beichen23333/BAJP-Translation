@@ -41,9 +41,11 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BAJPApkSrc
-          # 只复制解包后的 JSON 文件
-          cp -r ./temp/*.json BAJPApkSrc/
-          cd BAJPApkSrc
+          # 创建目标目录（如果不存在）
+          mkdir -p BAJPApkSrc/ExcelDB/原版
+          # 将解包后的 JSON 文件复制到目标目录
+          cp -r ./temp/*.json BAJPAkpSrc/ExcelDB/原版/
+          cd BAJPAkpSrc
           git add .
           git commit -m "Update generated JSON files"
           git push origin
