@@ -24,6 +24,23 @@ def dynamic_import_module(module_path: Path, module_name: str):
     spec.loader.exec_module(module)
     return module
 
+def convert_to_basic_types(obj):
+    """
+    将 FlatBuffers 对象转换为基本类型
+    """
+    if isinstance(obj, (int, float, str, bool, type(None))):
+        return obj
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_basic_types(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_to_basic_types(value) for key, value in obj.items()}
+    elif hasattr(obj, "__dict__"):
+        return {key: convert_to_basic_types(value) for key, value in obj.__dict__.items() if not key.startswith("_")}
+    elif hasattr(obj, "__iter__"):  # 处理其他可迭代对象
+        return [convert_to_basic_types(item) for item in obj]
+    else:
+        return str(obj)  # 如果无法处理，转换为字符串
+
 def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -75,7 +92,9 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
                         for field_name in dir(flatbuffer_obj):
                             if not field_name.startswith("__") and not callable(getattr(flatbuffer_obj, field_name)):
                                 field_value = getattr(flatbuffer_obj, field_name)()
-                                entry[field_name] = field_value
+                                if isinstance(field_value, bytes):
+                                    field_value = field_value.decode('utf-8', errors='ignore')  # 转换 bytes 为字符串
+                                entry[field_name] = convert_to_basic_types(field_value)
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
                 else:
