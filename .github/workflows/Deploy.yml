@@ -45,7 +45,6 @@ jobs:
 
       - name: Copy generated FlatData to BAJPApkSrc/ExcelDB/FlatData
         run: |
-          mkdir -p BAJPApkSrc/ExcelDB/FlatData
           cp -r Extracted/FlatData/* BAJPApkSrc/ExcelDB/FlatData/
           cd BAJPApkSrc
           git add .
