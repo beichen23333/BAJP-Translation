@@ -89,7 +89,7 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
 
     conn.close()
 
-def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Path):
+def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Path, flatbuffers_dir: Path):
     if not env_file.exists():
         raise FileNotFoundError(f"Environment file {env_file} not found.")
     
@@ -108,14 +108,9 @@ def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Pat
     excel_db_path = output_dir / "ExcelDB.db"
     download_file(excel_db_url, excel_db_path)
     
-    # 确保生成的 FlatBuffers 类文件所在的目录被添加到 sys.path 中
-    flatbuffers_generated_dir = output_dir / "FlatData"
-    if str(flatbuffers_generated_dir) not in sys.path:
-        sys.path.append(str(flatbuffers_generated_dir))
-    
     # 解包 ExcelDB.db 文件
     print(f"Unpacking {excel_db_path} to {temp_dir}...")
-    unpack_json_from_db(excel_db_path, temp_dir, flatbuffers_generated_dir)
+    unpack_json_from_db(excel_db_path, temp_dir, flatbuffers_dir)
     
     print(f"Unpacked files are saved in {temp_dir}")
 
@@ -127,4 +122,6 @@ if __name__ == "__main__":
     parser.add_argument("--temp_dir", type=Path, default="./temp", help="Temporary directory to unpack the files.")
     args = parser.parse_args()
     
-    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir)
+    EXTRACT_DIR = "Extracted"
+    flatbuffers_dir = Path(EXTRACT_DIR) / "FlatData"  # 确保路径正确
+    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir, flatbuffers_dir)
