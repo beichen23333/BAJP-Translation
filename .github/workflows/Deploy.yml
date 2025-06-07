@@ -34,23 +34,39 @@ jobs:
         run: |
           python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
 
-      - name: Commit and push generated files
+      - name: Check file sizes and prepare for commit
+        id: check_files
+        run: |
+          # 创建目标目录
+          mkdir -p BAJPApkSrc/ExcelDB/原版/
+          
+          # 检查并复制不超过50MB的JSON文件
+          for file in ./temp/*.json; do
+            filesize=$(stat -c%s "$file")
+            if [ $filesize -lt 52428800 ]; then  # 50MB in bytes
+              cp "$file" BAJPApkSrc/ExcelDB/原版/
+              echo "Copied $(basename "$file") (size: $((filesize/1024/1024))MB)"
+            else
+              echo "Skipping $(basename "$file") - size $((filesize/1024/1024))MB exceeds 50MB limit"
+            fi
+          done
+
+      - name: Commit and push changes
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BAJPApkSrc
-          cp -r ./temp/*.json BAJPApkSrc/ExcelDB/原版/
-
-      - name: Copy generated FlatData to BAJPApkSrc/ExcelDB/FlatData
-        run: |
-          cp -r Extracted/FlatData/* BAJPApkSrc/ExcelDB/FlatData/
+          
+          # 只复制已检查过的文件
+          cp -r BAJPApkSrc/ExcelDB/原版/* BAJPApkSrc/ExcelDB/原版/
+          
           cd BAJPApkSrc
           git add .
           if git diff-index --quiet HEAD; then
             echo "No changes detected. Skipping commit."
           else
-            git commit -m "Update"
+            git commit -m "Update JSON files (excluding large files)"
             git push origin
           fi
