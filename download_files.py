@@ -2,6 +2,7 @@ import sqlite3
 import json
 import flatbuffers
 import os
+import requests
 import sys
 import importlib.util
 from pathlib import Path
