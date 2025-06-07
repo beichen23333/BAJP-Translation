@@ -94,7 +94,9 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
                                 field_value = getattr(flatbuffer_obj, field_name)()
                                 if isinstance(field_value, bytes):
                                     field_value = field_value.decode('utf-8', errors='ignore')  # 转换 bytes 为字符串
-                                entry[field_name] = convert_to_basic_types(field_value)
+                                elif isinstance(field_value, list):
+                                    field_value = [convert_to_basic_types(item) for item in field_value]  # 转换列表中的每个元素
+                                entry[field_name] = field_value
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
                 else:
