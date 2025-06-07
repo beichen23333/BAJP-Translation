@@ -16,18 +16,12 @@ def download_file(url: str, output_file: Path):
     print(f"Downloaded {url} and saved as {output_file}")
 
 def dynamic_import_module(module_path: Path, module_name: str):
-    """
-    动态导入模块
-    """
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 def convert_to_basic_types(obj):
-    """
-    将 FlatBuffers 对象转换为基本类型
-    """
     if isinstance(obj, (int, float, str, bool, type(None))):
         return obj
     elif isinstance(obj, (list, tuple)):
@@ -36,19 +30,17 @@ def convert_to_basic_types(obj):
         return {key: convert_to_basic_types(value) for key, value in obj.items()}
     elif hasattr(obj, "__dict__"):
         return {key: convert_to_basic_types(value) for key, value in obj.__dict__.items() if not key.startswith("_")}
-    elif hasattr(obj, "__iter__"):  # 处理其他可迭代对象
+    elif hasattr(obj, "__iter__"):
         return [convert_to_basic_types(item) for item in obj]
     else:
-        return str(obj)  # 如果无法处理，转换为字符串
+        return str(obj)
 
 def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # 确保输出目录存在
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 获取所有表名
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
 
@@ -57,16 +49,13 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
         table_type = table_name.replace("DBSchema", "Excel")
         json_path = output_dir / f"{table_type}.json"
 
-        # 获取表的列信息
         cursor.execute(f"PRAGMA table_info({table_name})")
         columns_info = cursor.fetchall()
         columns = [col[1] for col in columns_info]
 
-        # 获取表中的所有数据
         cursor.execute(f"SELECT * FROM {table_name}")
         rows = cursor.fetchall()
 
-        # 解析每一行数据
         json_data = []
         for row in rows:
             entry = {}
@@ -103,7 +92,6 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
                     entry[col] = value
             json_data.append(entry)
 
-        # 如果表中有数据且没有跳过，则保存为 JSON 文件
         if json_data:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, ensure_ascii=False, indent=4)
@@ -122,15 +110,11 @@ def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Pat
             env_vars[key] = value
     
     ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL")
-    if not ba_server_url:
-        raise ValueError("ADDRESSABLE_CATALOG_URL not found in the environment file.")
-    
-    # 下载 ExcelDB.db 文件
+
     excel_db_url = f"{ba_server_url}/TableBundles/ExcelDB.db"
     excel_db_path = output_dir / "ExcelDB.db"
     download_file(excel_db_url, excel_db_path)
     
-    # 解包 ExcelDB.db 文件
     print(f"Unpacking {excel_db_path} to {temp_dir}...")
     unpack_json_from_db(excel_db_path, temp_dir, flatbuffers_dir)
     
@@ -145,5 +129,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     EXTRACT_DIR = "Extracted"
-    flatbuffers_dir = Path(EXTRACT_DIR) / "FlatData"  # 确保路径正确
+    flatbuffers_dir = Path(EXTRACT_DIR) / "FlatData"
     download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir, flatbuffers_dir)
