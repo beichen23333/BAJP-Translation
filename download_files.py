@@ -16,60 +16,88 @@ def download_file(url: str, output_file: Path):
     print(f"Downloaded {url} and saved as {output_file}")
 
 def unpack_json_from_db(db_path: Path, output_dir: Path):
+    import importlib
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-
-    # 确保输出目录存在
     output_dir.mkdir(parents=True, exist_ok=True)
-
+    
     # 获取所有表名
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
-
+    
+    # 在函数外添加 FlatBuffers 生成目录到 sys.path
+    flatbuffers_generated_dir = output_dir / "FlatData"
+    if str(flatbuffers_generated_dir) not in sys.path:
+        sys.path.append(str(flatbuffers_generated_dir))
+    
     for table_info in tables:
         table_name = table_info[0]
         table_type = table_name.replace("DBSchema", "Excel")
         json_path = output_dir / f"{table_type}.json"
 
-        # 获取表的列信息
+        # 获取列信息
         cursor.execute(f"PRAGMA table_info({table_name})")
         columns_info = cursor.fetchall()
         columns = [col[1] for col in columns_info]
 
-        # 获取表中的所有数据
         cursor.execute(f"SELECT * FROM {table_name}")
         rows = cursor.fetchall()
 
-        # 解析每一行数据
         json_data = []
         for row in rows:
             entry = {}
+            flat_data = {}  # 存储解析出的FlatBuffers数据
+            has_bytes = False
+            
             for col, value in zip(columns, row):
                 if col == "Bytes":
-                    # 反序列化 FlatBuffers 数据
+                    has_bytes = True
                     bytes_data = value
+                    
                     try:
-                        # 动态加载 FlatBuffers 类
-                        flatbuffer_class = getattr(flatbuffers, table_type, None)
-                        flatbuffer_obj = getattr(flatbuffer_class, "GetRootAs")(bytes_data, 0)
-
-                        # 动态获取 FlatBuffers 对象的字段
-                        for field_name in dir(flatbuffer_obj):
-                            if not field_name.startswith("__") and not callable(getattr(flatbuffer_obj, field_name)):
-                                entry[field_name] = getattr(flatbuffer_obj, field_name)
+                        # 动态导入对应的FlatBuffers模块
+                        module = importlib.import_module(table_type)
+                        # 获取FlatBuffers类
+                        flatbuffer_class = getattr(module, table_type)
+                        
+                        # 解析FlatBuffers数据
+                        flatbuffer_obj = flatbuffer_class.GetRootAs(bytes_data, 0)
+                        
+                        # 获取所有可能的字段
+                        field_names = [attr for attr in dir(flatbuffer_class) 
+                                      if not attr.startswith('_') and 
+                                      not attr.startswith('GetRoot') and 
+                                      callable(getattr(flatbuffer_class, attr))]
+                        
+                        # 尝试获取每个字段的值
+                        for field in field_names:
+                            try:
+                                # 调用方法获取字段值
+                                method = getattr(flatbuffer_class, field)
+                                field_value = method(flatbuffer_obj)
+                                flat_data[field] = field_value
+                            except Exception as e:
+                                # 某些方法可能不是字段访问器，忽略错误
+                                pass
+                        
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
+                        entry[col] = list(bytes_data)  # 原始字节作为备选
                 else:
                     entry[col] = value
+            
+            if has_bytes:
+                entry["FlatData"] = flat_data
+                
             json_data.append(entry)
 
-        # 如果表中有数据且没有跳过，则保存为 JSON 文件
         if json_data:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, ensure_ascii=False, indent=4)
             print(f"Unpacked {table_name} to {json_path}")
 
     conn.close()
+
 
 def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Path):
     if not env_file.exists():
