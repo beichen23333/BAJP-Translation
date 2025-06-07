@@ -21,72 +21,46 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install dependencies from requirements.txt
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
+          pip install -r requirements.txt
 
-      - name: Generate FlatData
+      - name: Run setup_flatdata.py to generate FlatData
         run: |
-          if [ -f setup_flatdata.py ]; then
-            python setup_flatdata.py
-          fi
+          python setup_flatdata.py
 
-      - name: Download and unpack ExcelDB
+      - name: Download ExcelDB.db and unpack it
         run: |
-          if [ -f download_files.py ]; then
-            python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
-          fi
+          python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
 
-      - name: Prepare files for commit
-        id: prepare_files
+      - name: Check file size and skip if over 50MB
         run: |
-          # 创建目标目录结构
-          mkdir -p staging/ExcelDB/原版/
-          
-          # 检查并复制不超过50MB的JSON文件
-          echo "Checking file sizes..."
+          MAX_SIZE=52428800  # 50MB in bytes
           for file in ./temp/*.json; do
             if [ -f "$file" ]; then
               filesize=$(stat -c%s "$file")
-              if [ $filesize -lt 52428800 ]; then  # 50MB in bytes
-                cp "$file" staging/ExcelDB/原版/
-                echo "✅ Copied $(basename "$file") ($((filesize/1024/1024))MB)"
-              else
-                echo "⚠️  Skipping $(basename "$file") - $((filesize/1024/1024))MB exceeds limit"
+              if [ "$filesize" -gt "$MAX_SIZE" ]; then
+                echo "File $file is larger than 50MB. Skipping."
+                rm "$file"  # 删除超过大小限制的文件
               fi
             fi
           done
 
-      - name: Commit and push changes
+      - name: Commit and push generated files
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
-          # 配置git
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          
-          # 克隆目标仓库到新目录
-          if [ -d "target_repo" ]; then
-            rm -rf target_repo
-          fi
-          git clone https://github.com/beichen23333/BAJPApkSrc.git target_repo
-          
-          # 复制准备好的文件
-          if [ -d "staging" ]; then
-            echo "Copying files to target repository..."
-            cp -r staging/* target_repo/
-          fi
-          
-          # 提交变更
-          cd target_repo
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "No changes to commit"
+          git clone "$TARGET_REPO_URL" BAJPApkSrc
+          cp -r ./temp/*.json BAJPApkSrc/ExcelDB/原版/
+
+          cd BAJPApkSrc
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "No changes detected. Skipping commit."
           else
-            git add .
-            git commit -m "Automated update: $(date +'%Y-%m-%d %H:%M:%S')"
-            git push origin main
-            echo "Changes pushed successfully"
+            git commit -m "Update"
+            git push origin
           fi
