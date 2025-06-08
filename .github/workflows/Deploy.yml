@@ -53,14 +53,14 @@ jobs:
 
       - name: Commit and push generated files
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPAkpSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git clone "$TARGET_REPO_URL" BAJPAkpSrc
-          cp -r ./unpacked/*.zip BAJPAkpSrc/
+          git clone "$TARGET_REPO_URL" BAJPApkSrc
+          cp -r ./unpacked/*.zip BAJPApkSrc/
 
-          cd BAJPAkpSrc
+          cd BAJPApkSrc
           git add .
           if git diff-index --quiet HEAD; then
             echo "No changes detected. Skipping commit."
