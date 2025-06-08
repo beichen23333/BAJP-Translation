@@ -53,14 +53,14 @@ jobs:
 
       - name: Commit and push generated files
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAText.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git clone "$TARGET_REPO_URL" BAText
-          cp -r ./unpacked/*.zip BAText/
+          git clone "$TARGET_REPO_URL" BA-Assets-TableBundles
+          cp -r ./unpacked/*.zip BA-Assets-TableBundles/
 
-          cd BAText
+          cd BA-Assets-TableBundles
           git add .
           if git diff-index --quiet HEAD; then
             echo "No changes detected. Skipping commit."
