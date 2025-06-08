@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 import json
 import importlib.util
-
+import inspect
 def download_file(url: str, output_file: Path):
     response = requests.get(url)
     if response.status_code != 200:
@@ -24,6 +24,11 @@ def dynamic_import_module(module_path: Path, module_name: str):
 def convert_to_basic_types(obj):
     if isinstance(obj, (int, float, str, bool, type(None))):
         return obj
+    elif isinstance(obj, bytes):
+        try:
+            return obj.decode('utf-8')
+        except UnicodeDecodeError:
+            return list(obj)  # 如果不能解码为 UTF-8，就返回字节数组
     elif isinstance(obj, (list, tuple)):
         return [convert_to_basic_types(item) for item in obj]
     elif isinstance(obj, dict):
@@ -79,13 +84,26 @@ def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
 
                         # 动态获取 FlatBuffers 对象的字段
                         for field_name in dir(flatbuffer_obj):
-                            if not field_name.startswith("__") and not callable(getattr(flatbuffer_obj, field_name)):
-                                field_value = getattr(flatbuffer_obj, field_name)()
-                                if isinstance(field_value, bytes):
-                                    field_value = field_value.decode('utf-8', errors='ignore')  # 转换 bytes 为字符串
-                                elif isinstance(field_value, list):
-                                    field_value = [convert_to_basic_types(item) for item in field_value]  # 转换列表中的每个元素
-                                entry[field_name] = field_value
+                            if field_name.startswith("_"):
+                                continue
+
+                            try:
+                                attr = getattr(flatbuffer_obj, field_name)
+
+                                if callable(attr):
+                                    # 确保是无参数的方法，才调用
+                                    sig = inspect.signature(attr)
+                                    if len(sig.parameters) == 0:
+                                        value = attr()
+                                    else:
+                                        continue  # 跳过需要参数的函数
+                                else:
+                                    value = attr
+
+                                value = convert_to_basic_types(value)
+                                entry[field_name] = value
+                            except Exception as e:
+                                print(f"Error reading field {field_name} in {table_type}: {e}")
                     except Exception as e:
                         print(f"Error processing {table_type}: {e}")
                 else:
