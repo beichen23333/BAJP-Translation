@@ -2,6 +2,7 @@ import os
 import sys
 import sqlite3
 import inspect
+import json
 from pathlib import Path
 from setup_utils import dynamic_import_module, convert_to_basic_types, pack_to_zip, deserialize_flatbuffer
 
