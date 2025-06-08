@@ -30,18 +30,22 @@ jobs:
         run: |
           python setup_flatdata.py
 
-      - name: Download ExcelDB.db and unpack it
+      - name: Download ExcelDB.db and Excel.zip
         run: |
-          python download_files.py --env_file ./ba.env --output_dir ./downloads --temp_dir ./temp
+          python download_files.py --env_file ./ba.env --output_dir ./downloads
 
-      - name: Check file size and skip if over 50MB
+      - name: Unpack ExcelDB.db and generate JSON files
         run: |
-          MAX_SIZE=52428800  # 50MB in bytes
-          for file in ./temp/*.json; do
+          python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
+
+      - name: Check file size and skip if over 100MB
+        run: |
+          MAX_SIZE=$((100 * 1024 * 1024))  # 100MB in bytes
+          for file in ./unpacked/*.json; do
             if [ -f "$file" ]; then
               filesize=$(stat -c%s "$file")
               if [ "$filesize" -gt "$MAX_SIZE" ]; then
-                echo "File $file is larger than 50MB. Skipping."
+                echo "File $file is larger than 100MB. Skipping."
                 rm "$file"  # 删除超过大小限制的文件
               fi
             fi
@@ -49,14 +53,14 @@ jobs:
 
       - name: Commit and push generated files
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPAkpSrc.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git clone "$TARGET_REPO_URL" BAJPApkSrc
-          cp -r ./temp/*.json BAJPApkSrc/ExcelDB/原版/
+          git clone "$TARGET_REPO_URL" BAJPAkpSrc
+          cp -r ./unpacked/*.zip BAJPAkpSrc/
 
-          cd BAJPApkSrc
+          cd BAJPAkpSrc
           git add .
           if git diff-index --quiet HEAD; then
             echo "No changes detected. Skipping commit."
