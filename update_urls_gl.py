@@ -11,6 +11,10 @@ from pathlib import Path
 UPTODOWN_URL = "https://blue-archive-global.en.uptodown.com/android"
 MANIFEST_URL = "https://api-pub.nexon.com/patch/v1.1/version-check"
 
+# 确保 Config 类中有 version 属性
+class Config:
+    version = None  # 默认值为 None
+
 def get_latest_version() -> str:
     """Fetch the latest version from Uptodown."""
     response = FileDownloader(UPTODOWN_URL).get_response()
@@ -18,7 +22,9 @@ def get_latest_version() -> str:
         raise LookupError("Cannot fetch resource catalog.")
     
     if version_match := re.search(r"(\d+\.\d+\.\d+)", response.text):
-        return version_match.group(1)
+        version = version_match.group(1)
+        Config.version = version  # 设置 Config.version
+        return version
     
     raise LookupError("Unable to retrieve the version.")
 
@@ -61,13 +67,13 @@ def get_resource_manifest(server_url: str) -> Resource:
 
 def main():
     """Main entry of GLServer."""
-    version = Config.version
-    if not version:
+    # 检查 Config.version 是否已设置
+    if not hasattr(Config, 'version') or Config.version is None:
         notice("Version not specified. Automatically fetching latest...")
-        version = Config.version = get_latest_version()
-    notice(f"Current resource version: {version}")
+        Config.version = get_latest_version()
+    notice(f"Current resource version: {Config.version}")
     
-    server_url = get_server_url(version)
+    server_url = get_server_url(Config.version)
     print("Pulling catalog...")
     resources = get_resource_manifest(server_url)
     notice(f"Catalog: {resources}.")
