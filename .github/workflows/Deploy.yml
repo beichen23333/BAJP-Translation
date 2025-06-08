@@ -1,7 +1,7 @@
 name: Update Files
 
 on:
-  workflow_dispatch:  # 仅允许手动触发
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -40,27 +40,27 @@ jobs:
 
       - name: Check file size and skip if over 100MB
         run: |
-          MAX_SIZE=$((100 * 1024 * 1024))  # 100MB in bytes
+          MAX_SIZE=$((100 * 1024 * 1024))
           for file in ./unpacked/*.json; do
             if [ -f "$file" ]; then
               filesize=$(stat -c%s "$file")
               if [ "$filesize" -gt "$MAX_SIZE" ]; then
                 echo "File $file is larger than 100MB. Skipping."
-                rm "$file"  # 删除超过大小限制的文件
+                rm "$file"
               fi
             fi
           done
 
       - name: Commit and push generated files
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAJPApkSrc.git
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BAText.git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git clone "$TARGET_REPO_URL" BAJPApkSrc
-          cp -r ./unpacked/*.zip BAJPApkSrc/
+          git clone "$TARGET_REPO_URL" BAText
+          cp -r ./unpacked/*.zip BAText/
 
-          cd BAJPApkSrc
+          cd BAText
           git add .
           if git diff-index --quiet HEAD; then
             echo "No changes detected. Skipping commit."
