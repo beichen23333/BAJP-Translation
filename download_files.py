@@ -2,10 +2,7 @@ import os
 import sys
 import requests
 from pathlib import Path
-import sqlite3
-import json
-import importlib.util
-import inspect
+
 def download_file(url: str, output_file: Path):
     response = requests.get(url)
     if response.status_code != 200:
@@ -15,109 +12,7 @@ def download_file(url: str, output_file: Path):
         f.write(response.content)
     print(f"Downloaded {url} and saved as {output_file}")
 
-def dynamic_import_module(module_path: Path, module_name: str):
-    spec = importlib.util.spec_from_file_location(module_name, module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-def convert_to_basic_types(obj):
-    if isinstance(obj, (int, float, str, bool, type(None))):
-        return obj
-    elif isinstance(obj, bytes):
-        try:
-            return obj.decode('utf-8')
-        except UnicodeDecodeError:
-            return list(obj)  # 如果不能解码为 UTF-8，就返回字节数组
-    elif isinstance(obj, (list, tuple)):
-        return [convert_to_basic_types(item) for item in obj]
-    elif isinstance(obj, dict):
-        return {key: convert_to_basic_types(value) for key, value in obj.items()}
-    elif hasattr(obj, "__dict__"):
-        return {key: convert_to_basic_types(value) for key, value in obj.__dict__.items() if not key.startswith("_")}
-    elif hasattr(obj, "__iter__"):
-        return [convert_to_basic_types(item) for item in obj]
-    else:
-        return str(obj)
-
-def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = cursor.fetchall()
-
-    for table_info in tables:
-        table_name = table_info[0]
-        table_type = table_name.replace("DBSchema", "Excel")
-        json_path = output_dir / f"{table_type}.json"
-
-        cursor.execute(f"PRAGMA table_info({table_name})")
-        columns_info = cursor.fetchall()
-        columns = [col[1] for col in columns_info]
-
-        cursor.execute(f"SELECT * FROM {table_name}")
-        rows = cursor.fetchall()
-
-        json_data = []
-        for row in rows:
-            entry = {}
-            for col, value in zip(columns, row):
-                if col == "Bytes":
-                    # 反序列化 FlatBuffers 数据
-                    bytes_data = value
-                    try:
-                        # 动态导入 FlatBuffers 类
-                        flatbuffer_class_name = table_type
-                        flatbuffer_module_path = flatbuffers_dir / f"{flatbuffer_class_name}.py"
-                        if not flatbuffer_module_path.exists():
-                            print(f"FlatBuffers class file {flatbuffer_module_path} not found.")
-                            continue
-
-                        flatbuffer_module = dynamic_import_module(flatbuffer_module_path, flatbuffer_class_name)
-                        flatbuffer_class = getattr(flatbuffer_module, flatbuffer_class_name)
-
-                        # 获取 FlatBuffers 对象
-                        flatbuffer_obj = flatbuffer_class.GetRootAs(bytes_data, 0)
-
-                        # 动态获取 FlatBuffers 对象的字段
-                        for field_name in dir(flatbuffer_obj):
-                            if field_name.startswith("_"):
-                                continue
-
-                            try:
-                                attr = getattr(flatbuffer_obj, field_name)
-
-                                if callable(attr):
-                                    # 确保是无参数的方法，才调用
-                                    sig = inspect.signature(attr)
-                                    if len(sig.parameters) == 0:
-                                        value = attr()
-                                    else:
-                                        continue  # 跳过需要参数的函数
-                                else:
-                                    value = attr
-
-                                value = convert_to_basic_types(value)
-                                entry[field_name] = value
-                            except Exception as e:
-                                print(f"Error reading field {field_name} in {table_type}: {e}")
-                    except Exception as e:
-                        print(f"Error processing {table_type}: {e}")
-                else:
-                    entry[col] = value
-            json_data.append(entry)
-
-        if json_data:
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(json_data, f, ensure_ascii=False, indent=4)
-            print(f"Unpacked {table_name} to {json_path}")
-
-    conn.close()
-
-def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Path, flatbuffers_dir: Path):
+def download_excel_files(env_file: Path, output_dir: Path):
     if not env_file.exists():
         raise FileNotFoundError(f"Environment file {env_file} not found.")
     
@@ -130,22 +25,22 @@ def download_and_unpack_excel_db(env_file: Path, output_dir: Path, temp_dir: Pat
     ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL")
 
     excel_db_url = f"{ba_server_url}/TableBundles/ExcelDB.db"
+    excel_zip_url = f"{ba_server_url}/TableBundles/Excel.zip"
+
     excel_db_path = output_dir / "ExcelDB.db"
+    excel_zip_path = output_dir / "Excel.zip"
+
     download_file(excel_db_url, excel_db_path)
-    
-    print(f"Unpacking {excel_db_path} to {temp_dir}...")
-    unpack_json_from_db(excel_db_path, temp_dir, flatbuffers_dir)
-    
-    print(f"Unpacked files are saved in {temp_dir}")
+    download_file(excel_zip_url, excel_zip_path)
+
+    print(f"Downloaded ExcelDB.db to {excel_db_path}")
+    print(f"Downloaded Excel.zip to {excel_zip_path}")
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Download ExcelDB.db from BA_SERVER_URL and unpack it.")
+    parser = argparse.ArgumentParser(description="Download ExcelDB.db and Excel.zip from BA_SERVER_URL.")
     parser.add_argument("--env_file", type=Path, default="./ba.env", help="Path to the ba.env file.")
     parser.add_argument("--output_dir", type=Path, default="./downloads", help="Directory to save the downloaded files.")
-    parser.add_argument("--temp_dir", type=Path, default="./temp", help="Temporary directory to unpack the files.")
     args = parser.parse_args()
     
-    EXTRACT_DIR = "Extracted"
-    flatbuffers_dir = Path(EXTRACT_DIR) / "FlatData"
-    download_and_unpack_excel_db(args.env_file, args.output_dir, args.temp_dir, flatbuffers_dir)
+    download_excel_files(args.env_file, args.output_dir)
