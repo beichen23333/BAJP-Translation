@@ -48,11 +48,24 @@ def deserialize_flatbuffer(bytes_data: bytes, flatbuffers_dir: Path, table_type:
     # 动态获取 FlatBuffers 对象的字段
     result = {}
     for field_name in dir(flatbuffer_obj):
-        if not field_name.startswith("__") and not callable(getattr(flatbuffer_obj, field_name)):
-            field_value = getattr(flatbuffer_obj, field_name)()
-            if isinstance(field_value, bytes):
-                field_value = field_value.decode('utf-8', errors='ignore')  # 转换 bytes 为字符串
-            elif isinstance(field_value, list):
-                field_value = [convert_to_basic_types(item) for item in field_value]  # 转换列表中的每个元素
-            result[field_name] = field_value
+        if field_name.startswith("_"):
+            continue
+
+        try:
+            attr = getattr(flatbuffer_obj, field_name)
+
+            if callable(attr):
+                # 确保是无参数的方法，才调用
+                sig = inspect.signature(attr)
+                if len(sig.parameters) == 0:
+                    value = attr()
+                else:
+                    continue  # 跳过需要参数的函数
+            else:
+                value = attr
+
+            value = convert_to_basic_types(value)
+            result[field_name] = value
+        except Exception as e:
+            print(f"Error reading field {field_name} in {table_type}: {e}")
     return result
