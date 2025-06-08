@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import zipfile
+import inspect
 from pathlib import Path
 
 def dynamic_import_module(module_path: Path, module_name: str):
