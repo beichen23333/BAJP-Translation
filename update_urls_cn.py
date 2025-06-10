@@ -16,58 +16,58 @@ from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def download_chunk(url: str, start: int, end: int, output_path: str):
-    headers = {"Range": f"bytes={start}-{end}", "User-Agent": "Chrome/122.0"}
-    response = requests.get(url, headers=headers, stream=True)
-    if response.status_code == 206:
-        with open(output_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+def download_apk_worker(task_manager: TaskManager, url: str) -> None:
+    task = task_manager.tasks。get()
+    FileDownloader(url, headers=task["header"], enable_progress=True)。save_file(task["path"])
+    task_manager.tasks。task_done()
+
+def download_apk_file(apk_url: str) -> str:
+    apk_size = 0
+    if apk_head := FileDownloader(apk_url, headers={}, enable_progress=False)。get_response():
+        apk_size = int(apk_head.headers。get("Content-Length"， 0))
+
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+    apk_path = TEMP_DIR / "com.RoamingStar.BlueArchive.bilibili.apk"
+
+    if apk_path.exists() 和 apk_path.stat()。st_size == apk_size:
+        print("APK file already exists and size matches.")
+        return str(apk_path)
+
+    if not apk_size:
+        FileDownloader(apk_url)。save_file(str(apk_path))
     else:
-        notice(f"Failed to download chunk {output_path}. Status code: {response.status_code}")
-
-def download_apk(apk_url: str, apk_size: int) -> str:
-    os.makedirs(TEMP_DIR, exist_ok=True)
-    notice("Downloading APK...")
-    apk_filename = "com.RoamingStar.BlueArchive.bilibili.apk"
-    apk_path = path.join(TEMP_DIR, apk_filename)
-
-    # 如果文件已存在且大小匹配，则直接返回
-    if path.exists(apk_path) and path.getsize(apk_path) == apk_size:
-        return apk_path
-
-    worker_num = 5
-    chunk_size = apk_size // worker_num
-    parts = []
-
-    # 创建分块任务
-    for i in range(worker_num):
-        start = chunk_size * i
-        end = start + chunk_size - 1 if i != worker_num - 1 else apk_size - 1
-        output = path.join(TEMP_DIR, f"chunk_{i}.dat")
-        parts.append({"start": start, "end": end, "output": output})
-
-    # 使用线程池下载分块
-    with ThreadPoolExecutor(max_workers=worker_num) as executor:
-        futures = []
-        for part in parts:
-            futures.append(executor.submit(download_chunk, apk_url, part["start"], part["end"], part["output"]))
-
-        # 显示进度条
-        with ProgressBar(apk_size, "Downloading APK...", "MB", 1048576) as progress:
-            for future in as_completed(futures):
-                future.result()
-                progress.update(chunk_size)
-
-    # 合并分块
-    with open(apk_path, "wb") as f:
+        worker_num = 5
+        chunk_size = apk_size // worker_num
+        parts: List[Dict] = []
         for i in range(worker_num):
-            chunk_path = path.join(TEMP_DIR, f"chunk_{i}.dat")
-            with open(chunk_path, "rb") as chunk_file:
-                f.write(chunk_file.read())
-            os.remove(chunk_path)  # 删除分块文件
+            start = chunk_size * i
+            end = start + chunk_size - 1 if i != worker_num - 1 else apk_size - 1
+            output = TEMP_DIR / f"chunk_{i}.dat"
+            header = {"Range": f"bytes={start}-{end}"， "User-Agent": "Chrome/122.0"}
+            parts.append({"header": header, "path": str(output)})
 
-    return apk_path.replace("\\", "/")
+        task_manager = TaskManager(max_workers=worker_num, worker_num=worker_num)
+        for part in parts:
+            task_manager.add_task(part)
+
+        with ProgressBar(apk_size, "Downloading APK..."， "MB"， 1048576) as progress:
+            task_manager.run(apk_url, download_apk_worker)
+            for part in parts:
+                progress.update(os.path。getsize(part["path"]))
+
+        with open(apk_path, "wb") as apk:
+            for part in parts:
+                with open(part["path"]， "rb") as chunk:
+                    apk.write(chunk.read())
+                os.remove(part["path"])
+
+        if apk_path.stat().st_size != apk_size:
+            notice("Failed when download apk. Retry...", "error")
+            return download_apk_file(apk_url)
+
+    notice("Combinate files to apk success.")
+    return str(apk_path)
 
 def get_app_version() -> str:
     url = "https://bluearchive-cn.com/api/meta/setup"
@@ -171,19 +171,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # 设置请求头
-    headers = {
-        "User-Agent": "Chrome/122.0"
-    }
-
-    # 读取网页内容
     url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
     response = requests.get(url, headers=headers)
 
     # 解析 JSON 数据
     data = json.loads(response.text)
     apk_url = data["data"]["android_download_link"]
-    apk_size = data["data"]["android_pkg_size"]
 
     # 下载 APK 文件
     apk_path = download_apk(apk_url, apk_size)
