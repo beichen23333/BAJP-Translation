@@ -10,8 +10,27 @@ import requests
 import subprocess
 import re
 from pathlib import Path
-import setup_apk_cn
+from shutil import move
+from lib.downloader import FileDownloader
+from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
+
+def download_apk(apk_url: str) -> str:
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    notice("Downloading APK...")
+    apk_req = FileDownloader(apk_url, request_method="get", use_cloud_scraper=True, verbose=True)
+    apk_data = apk_req.get_response(True)
+
+    apk_filename = "com.RoamingStar.BlueArchive.bilibili.apk"
+    apk_path = path.join(TEMP_DIR, apk_filename)
+    apk_size = int(apk_data.headers.get("Content-Length", 0))
+
+    if path.exists(apk_path) and path.getsize(apk_path) == apk_size:
+        return apk_path
+
+    FileDownloader(apk_url, request_method="get", enable_progress=True, use_cloud_scraper=True).save_file(apk_path)
+
+    return apk_path.replace("\\", "/")
 
 def get_app_version() -> str:
     url = "https://bluearchive-cn.com/api/meta/setup"
@@ -49,9 +68,17 @@ def get_server_url() -> str:
     except Exception as e:
         return str(e)
 
-def get_addressable_catalog_url(server_info: dict, json_output_path: Path) -> str:
-    """Extracts the latest AddressablesCatalogUrlRoot from the server info."""
-    addressables_catalog_url_roots = server_info.get("AddressablesCatalogUrlRoots", [])
+def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
+    """Fetches and extracts the latest AddressablesCatalogUrlRoot from the server URL."""
+    response = requests.get(server_url)
+    if response.status_code != 200:
+        raise LookupError(f"Failed to fetch data from {server_url}. Status code: {response.status_code}")
+    
+    # Parse the JSON response
+    data = response.json()
+
+    # Extract the first AddressablesCatalogUrlRoot from the list
+    addressables_catalog_url_roots = data.get("AddressablesCatalogUrlRoots", [])
     if not addressables_catalog_url_roots:
         raise LookupError("Cannot find AddressablesCatalogUrlRoots in the server response.")
     
@@ -62,7 +89,7 @@ def get_addressable_catalog_url(server_info: dict, json_output_path: Path) -> st
     
     # Save the full server response to the specified JSON output path
     with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(server_info, f, separators=(",", ":"), ensure_ascii=False)
+        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
     
     return first_catalog_url
 
@@ -103,13 +130,28 @@ def get_apk_version_info(apk_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update Yostar server URL for Blue Archive JP")
+    parser = argparse.ArgumentParser(description="Update Yostar server URL for Blue Archive CN")
     parser.add_argument("output_path", type=Path, help="output file for server url")
     parser.add_argument("json_output_path", type=Path, help="output file for json from server url")
 
     args = parser.parse_args()
+
+    url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
+    response = requests.get(url)
+    if response.status_code != 200:
+        notice(f"Failed to fetch data from {url}")
+        return
+
+    # 解析 JSON 数据
+    data = json.loads(response.text)
+    apk_url = data["data"]["android_download_link"]
+
+    # 下载 APK 文件
+    apk_path = download_apk(apk_url)
+    notice(f"APK downloaded to {apk_path}")
+
     with open(args.output_path, "wb") as fs:
-        server_info = json.loads(get_server_url())
-        addressable_catalog_url = get_addressable_catalog_url(server_info, args.json_output_path)
+        server_url = get_server_url()
+        addressable_catalog_url = get_addressable_catalog_url(server_url, args.json_output_path)
         versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.RoamingStar.BlueArchive.bilibili.apk"))
         fs.write(f"BA_SERVER_URL=https://gs-api.bluearchive-cn.com/api/state\nADDRESSABLE_CATALOG_URL={addressable_catalog_url}\nBA_VERSION_CODE={versionCode}\nBA_VERSION_NAME={versionName}".encode())
