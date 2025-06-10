@@ -64,34 +64,32 @@ def get_server_url() -> str:
         if server_info:
             return json.dumps(server_info, indent=4)
         else:
-            return "Failed to fetch server information."
+            return json.dumps({"error": "Failed to fetch server information."}, indent=4)
     except Exception as e:
-        return str(e)
+        return json.dumps({"error": str(e)}, indent=4)
 
-def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
-    """Fetches and extracts the latest AddressablesCatalogUrlRoot from the server URL."""
-    response = requests.get(server_url)
-    if response.status_code != 200:
-        raise LookupError(f"Failed to fetch data from {server_url}. Status code: {response.status_code}")
-    
-    # Parse the JSON response
-    data = response.json()
-
-    # Extract the first AddressablesCatalogUrlRoot from the list
-    addressables_catalog_url_roots = data.get("AddressablesCatalogUrlRoots", [])
-    if not addressables_catalog_url_roots:
-        raise LookupError("Cannot find AddressablesCatalogUrlRoots in the server response.")
-    
-    # Get the first AddressablesCatalogUrlRoot in the list
-    first_catalog_url = addressables_catalog_url_roots[0]
-    if not first_catalog_url:
-        raise LookupError("Cannot find the first AddressablesCatalogUrlRoot in the list.")
-    
-    # Save the full server response to the specified JSON output path
-    with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
-    
-    return first_catalog_url
+def get_addressable_catalog_url(server_info_json: str, json_output_path: Path) -> str:
+    try:
+        # Parse the server info JSON
+        server_info = json.loads(server_info_json)
+        
+        # Extract the first AddressablesCatalogUrlRoot from the list
+        addressables_catalog_url_roots = server_info.get("AddressablesCatalogUrlRoots", [])
+        if not addressables_catalog_url_roots:
+            raise LookupError("Cannot find AddressablesCatalogUrlRoots in the server response.")
+        
+        # Get the first AddressablesCatalogUrlRoot in the list
+        first_catalog_url = addressables_catalog_url_roots[0]
+        if not first_catalog_url:
+            raise LookupError("Cannot find the first AddressablesCatalogUrlRoot in the list.")
+        
+        # Save the full server response to the specified JSON output path
+        with open(json_output_path, "w", encoding="utf-8") as f:
+            json.dump(server_info, f, separators=(",", ":"), ensure_ascii=False)
+        
+        return first_catalog_url
+    except Exception as e:
+        raise LookupError(f"Error processing server info: {str(e)}")
 
 import zipfile
 import xml.etree.ElementTree as ET
@@ -138,6 +136,9 @@ if __name__ == "__main__":
 
     url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
     response = requests.get(url)
+    if response.status_code != 200:
+        notice(f"Failed to fetch data from {url}")
+        return
 
     # 解析 JSON 数据
     data = json.loads(response.text)
