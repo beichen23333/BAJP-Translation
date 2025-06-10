@@ -14,60 +14,23 @@ from shutil import move
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def download_apk_worker(task_manager: TaskManager, url: str) -> None:
-    task = task_manager.tasks。get()
-    FileDownloader(url, headers=task["header"], enable_progress=True)。save_file(task["path"])
-    task_manager.tasks。task_done()
+def download_apk(apk_url: str) -> str:
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    notice("Downloading APK...")
+    apk_req = FileDownloader(apk_url, request_method="get", use_cloud_scraper=True, verbose=True)
+    apk_data = apk_req.get_response(True)
 
-def download_apk_file(apk_url: str) -> str:
-    apk_size = 0
-    if apk_head := FileDownloader(apk_url, headers={}, enable_progress=False)。get_response():
-        apk_size = int(apk_head.headers。get("Content-Length"， 0))
+    apk_filename = "com.RoamingStar.BlueArchive.bilibili.apk"
+    apk_path = path.join(TEMP_DIR, apk_filename)
+    apk_size = int(apk_data.headers.get("Content-Length", 0))
 
-    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    if path.exists(apk_path) and path.getsize(apk_path) == apk_size:
+        return apk_path
 
-    apk_path = TEMP_DIR / "com.RoamingStar.BlueArchive.bilibili.apk"
+    FileDownloader(apk_url, request_method="get", enable_progress=True, use_cloud_scraper=True).save_file(apk_path)
 
-    if apk_path.exists() 和 apk_path.stat()。st_size == apk_size:
-        print("APK file already exists and size matches.")
-        return str(apk_path)
-
-    if not apk_size:
-        FileDownloader(apk_url)。save_file(str(apk_path))
-    else:
-        worker_num = 5
-        chunk_size = apk_size // worker_num
-        parts: List[Dict] = []
-        for i in range(worker_num):
-            start = chunk_size * i
-            end = start + chunk_size - 1 if i != worker_num - 1 else apk_size - 1
-            output = TEMP_DIR / f"chunk_{i}.dat"
-            header = {"Range": f"bytes={start}-{end}"， "User-Agent": "Chrome/122.0"}
-            parts.append({"header": header, "path": str(output)})
-
-        task_manager = TaskManager(max_workers=worker_num, worker_num=worker_num)
-        for part in parts:
-            task_manager.add_task(part)
-
-        with ProgressBar(apk_size, "Downloading APK..."， "MB"， 1048576) as progress:
-            task_manager.run(apk_url, download_apk_worker)
-            for part in parts:
-                progress.update(os.path。getsize(part["path"]))
-
-        with open(apk_path, "wb") as apk:
-            for part in parts:
-                with open(part["path"]， "rb") as chunk:
-                    apk.write(chunk.read())
-                os.remove(part["path"])
-
-        if apk_path.stat().st_size != apk_size:
-            notice("Failed when download apk. Retry...", "error")
-            return download_apk_file(apk_url)
-
-    notice("Combinate files to apk success.")
-    return str(apk_path)
+    return apk_path.replace("\\", "/")
 
 def get_app_version() -> str:
     url = "https://bluearchive-cn.com/api/meta/setup"
@@ -172,14 +135,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
-    # 解析 JSON 数据
     data = json.loads(response.text)
     apk_url = data["data"]["android_download_link"]
 
-    # 下载 APK 文件
-    apk_path = download_apk(apk_url, apk_size)
+    apk_path = download_apk(apk_url)
     notice(f"APK downloaded to {apk_path}")
 
     with open(args.output_path, "wb") as fs:
