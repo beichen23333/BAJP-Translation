@@ -49,17 +49,9 @@ def get_server_url() -> str:
     except Exception as e:
         return str(e)
 
-def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
-    """Fetches and extracts the latest AddressablesCatalogUrlRoot from the server URL."""
-    response = requests.get(server_url)
-    if response.status_code != 200:
-        raise LookupError(f"Failed to fetch data from {server_url}. Status code: {response.status_code}")
-    
-    # Parse the JSON response
-    data = response.json()
-
-    # Extract the first AddressablesCatalogUrlRoot from the list
-    addressables_catalog_url_roots = data.get("AddressablesCatalogUrlRoots", [])
+def get_addressable_catalog_url(server_info: dict, json_output_path: Path) -> str:
+    """Extracts the latest AddressablesCatalogUrlRoot from the server info."""
+    addressables_catalog_url_roots = server_info.get("AddressablesCatalogUrlRoots", [])
     if not addressables_catalog_url_roots:
         raise LookupError("Cannot find AddressablesCatalogUrlRoots in the server response.")
     
@@ -70,7 +62,7 @@ def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
     
     # Save the full server response to the specified JSON output path
     with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+        json.dump(server_info, f, separators=(",", ":"), ensure_ascii=False)
     
     return first_catalog_url
 
@@ -117,7 +109,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     with open(args.output_path, "wb") as fs:
-        server_url = get_server_url()
-        addressable_catalog_url = get_addressable_catalog_url(server_url, args.json_output_path)
+        server_info = json.loads(get_server_url())
+        addressable_catalog_url = get_addressable_catalog_url(server_info, args.json_output_path)
         versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.RoamingStar.BlueArchive.bilibili.apk"))
         fs.write(f"BA_SERVER_URL=https://gs-api.bluearchive-cn.com/api/state\nADDRESSABLE_CATALOG_URL={addressable_catalog_url}\nBA_VERSION_CODE={versionCode}\nBA_VERSION_NAME={versionName}".encode())
