@@ -10,7 +10,7 @@ import requests
 import subprocess
 import re
 from pathlib import Path
-import setup_apk
+import setup_apk_cn
 TEMP_DIR = "Temp"
 
 def get_app_version() -> str:
