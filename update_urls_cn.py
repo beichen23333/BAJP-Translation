@@ -138,9 +138,6 @@ if __name__ == "__main__":
 
     url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
     response = requests.get(url)
-    if response.status_code != 200:
-        notice(f"Failed to fetch data from {url}")
-        return
 
     # 解析 JSON 数据
     data = json.loads(response.text)
