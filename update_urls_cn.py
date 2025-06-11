@@ -134,11 +134,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    url = "https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=109864"
-    response = requests.get(url)
-
-    data = json.loads(response.text)
-    apk_url = data["data"]["android_download_link"]
+    apk_url = "https://pkg.bluearchive-cn.com/pubplat/gpp/sdkpackage/prod/game_apk_v2/Official/a2ffc29d00bc45bd9dec35651e185fad/com.RoamingStar.BlueArchive.apk"
 
     apk_path = download_apk(apk_url)
     notice(f"APK downloaded to {apk_path}")
