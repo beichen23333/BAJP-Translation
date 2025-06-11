@@ -1,15 +1,13 @@
-name: Update Files
-
 on:
   workflow_dispatch:
-
+  push:
+  repository_dispatch:
+    types: [run-deployment]
 permissions:
   contents: write
-
 jobs:
-  update:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
