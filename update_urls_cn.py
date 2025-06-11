@@ -15,7 +15,7 @@ from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
 
-def get_apk_url() -> str::
+def get_apk_url() -> str:
     response = FileDownloader("https://bluearchive-cn.com/").get_response()
     js_match = re.search(r'<script[^>]+type="module"[^>]+crossorigin[^>]+src="([^"]+)"[^>]*>', response.text)
     if not js_match:
