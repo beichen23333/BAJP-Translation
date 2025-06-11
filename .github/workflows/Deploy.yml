@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare R2
+name: Deploy File
 on:
   workflow_dispatch:
   push:
