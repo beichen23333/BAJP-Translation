@@ -15,6 +15,20 @@ from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
 
+def get_apk_url() -> str::
+    response = FileDownloader("https://bluearchive-cn.com/").get_response()
+    js_match = re.search(r'<script[^>]+type="module"[^>]+crossorigin[^>]+src="([^"]+)"[^>]*>', response.text)
+    if not js_match:
+        raise LookupError("Could not find the JavaScript file link.")
+
+    js_url = js_match.group(1)
+    js_response = FileDownloader(js_url).get_response()
+    apk_match = re.search(r'http[s]?://[^\s"<>]+?\.apk', js_response.text)
+    if not apk_match:
+        raise LookupError("Could not find the APK download link.")
+
+    return apk_match.group()
+
 def download_apk(apk_url: str) -> str:
     os.makedirs(TEMP_DIR, exist_ok=True)
     notice("Downloading APK...")
@@ -134,7 +148,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    apk_url = "https://pkg.bluearchive-cn.com/pubplat/gpp/sdkpackage/prod/game_apk_v2/Official/a2ffc29d00bc45bd9dec35651e185fad/com.RoamingStar.BlueArchive.apk"
+    apk_url = get_apk_url()
 
     apk_path = download_apk(apk_url)
     notice(f"APK downloaded to {apk_path}")
