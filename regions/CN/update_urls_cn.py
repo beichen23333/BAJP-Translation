@@ -95,25 +95,3 @@ def get_apk_version_info(apk_path):
     except Exception as e:
         notice(f"Error extracting version info from manifest: {e}")
         return None
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update Yostar server URL for Blue Archive CN")
-    parser.add_argument("output_path", type=Path, help="output file for server url")
-    parser.add_argument("json_output_path", type=Path, help="output file for json from server url")
-
-    args = parser.parse_args()
-
-    server_url = get_server_url()
-    addressable_catalog_url = get_addressable_catalog_url(server_url, args.json_output_path)
-    versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.RoamingStar.BlueArchive.bilibili.apk"))
-
-    with open(args.output_path, "r") as fs:
-        lines = fs.readlines()
-
-    lines[4] = f"BA_SERVER_URL_CN={server_url}"
-    lines[5] = f"ADDRESSABLE_CATALOG_URL_CN={addressable_catalog_url}"
-    lines[6] = f"BA_VERSION_CODE_CN={versionCode}"
-    lines[7] = f"BA_VERSION_CODE_CN={versionCode}"
-    with open(args.output_path, "w") as fs:
-        fs.writelines(lines)

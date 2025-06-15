@@ -13,7 +13,7 @@ from pathlib import Path
 from shutil import move
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
-import regions.GL.setup_apk_gl
+
 TEMP_DIR = "Temp"
 
 def get_latest_version() -> str:
@@ -70,25 +70,3 @@ def get_apk_version_info(apk_path):
     except Exception as e:
         notice(f"Error extracting version info from manifest: {e}")
         return None
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update Nexon server URL for Blue Archive")
-    parser.add_argument("output_path", type=Path, help="output file for server url")
-    parser.add_argument("json_output_path", type=Path, help="output file for json from server url")
-
-    args = parser.parse_args()
-    latest_version = get_latest_version()
-    server_url = get_server_url(latest_version)
-    versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
-    addressable_catalog_url = server_url.rsplit('/', 1)[0]
-
-    with open(args.output_path, "r") as fs:
-        lines = fs.readlines()
-
-    lines[8] = f"BA_SERVER_URL_GL={ba_server_url}"
-    lines[9] = f"ADDRESSABLE_CATALOG_URL_GL={addressable_catalog_url}"
-    lines[10] = f"BA_VERSION_CODE_GL={versionCode}"
-    lines[11] = f"BA_VERSION_CODE_GL={versionCode}"
-    with open(args.output_path, "w") as fs:
-        fs.writelines(lines)
