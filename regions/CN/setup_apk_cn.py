@@ -2,13 +2,14 @@ from utils.util import ZipUtils
 from os import path
 import glob
 import os
+import re
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
 
 TEMP_DIR = "Temp"
 
 def extract_apk_file(apk_path: str) -> None:
-    ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR, "Data"), zips_dir=TEMP_DIR)
+    ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR, "Data"))
 
 def get_apk_url() -> str:
     response = FileDownloader("https://bluearchive-cn.com/").get_response()
@@ -42,8 +43,5 @@ def download_apk(apk_url: str) -> str:
     return apk_path.replace("\\", "/")
 
 if not path.exists(path.join(TEMP_DIR, "Data")):
-    apk_url = get_apk_url()
-    apk_path = download_apk(apk_url)
-    notice(f"APK downloaded to {apk_path}")
-
+    apk_path = download_apk(get_apk_url())
     extract_apk_file(apk_path)
