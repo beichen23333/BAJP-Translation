@@ -15,7 +15,7 @@ def main(output_path: Path, json_output_path: Path):
 
     if not path.exists(APK_PATH):
         notice("APK 文件不存在，开始下载...")
-        apk_path_downloaded = setup_apk_gl.download_xapk(apk_url)
+        apk_path_downloaded = setup_apk_gl.download_xapk()
         setup_apk_gl.extract_apk_file(apk_path_downloaded)
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
@@ -42,8 +42,6 @@ def main(output_path: Path, json_output_path: Path):
         f.writelines(lines)
 
     notice("已完成所有操作并写入文件。")
-
-    
 
 if __name__ == "__main__":
     import argparse

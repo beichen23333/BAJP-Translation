@@ -37,7 +37,3 @@ def download_xapk() -> str:
     FileDownloader(apk_url, request_method="get", enable_progress=True, use_cloud_scraper=True).save_file(apk_path)
 
     return apk_path.replace("\\", "/")
-
-if not path.exists(path.join(TEMP_DIR, "Data")):
-    apk_path = download_xapk()
-    extract_apk_file(apk_path)
