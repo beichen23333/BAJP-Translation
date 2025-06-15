@@ -1,9 +1,9 @@
-from utils.util import ZipUtils
+from ..utils.util import ZipUtils
 from os import path
 import glob
 import os
-from lib.downloader import FileDownloader
-from lib.console import ProgressBar, notice
+from ..lib.downloader import FileDownloader
+from ..lib.console import ProgressBar, notice
 
 TEMP_DIR = "Temp"
 
