@@ -37,7 +37,7 @@ jobs:
 
       - name: Run update_urls_gl
         run: |
-          python -m regions.GL.update_urls_gl ba.env server-info.json
+          python -m regions.GL.GL.run ba.env server-info.json
 
       - name: Check if ba.env was modified and detect which lines changed
         run: |
