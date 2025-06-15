@@ -41,7 +41,3 @@ def download_apk(apk_url: str) -> str:
     FileDownloader(apk_url, request_method="get", enable_progress=True, use_cloud_scraper=True).save_file(apk_path)
 
     return apk_path.replace("\\", "/")
-
-if not path.exists(path.join(TEMP_DIR, "Data")):
-    apk_path = download_apk(get_apk_url())
-    extract_apk_file(apk_path)

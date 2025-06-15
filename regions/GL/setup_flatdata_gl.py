@@ -13,6 +13,15 @@ if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     from utils.util import FileUtils
     from extractor import compile_python
 
+    os.makedirs(TEMP_DIR, exist_ok=True)
+
+    if not path.exists(APK_PATH):
+        notice("APK 文件不存在，开始下载...")
+        apk_path_downloaded = setup_apk_gl.download_xapk()
+        setup_apk_gl.extract_apk_file(apk_path_downloaded)
+    else:
+        notice("已存在 APK 文件，跳过下载步骤。")
+
     IL2CPP_NAME = "libil2cpp.so"
     METADATA_NAME = "global-metadata.dat"
 

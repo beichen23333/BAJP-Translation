@@ -15,7 +15,7 @@ def main(output_path: Path, json_output_path: Path):
 
     if not path.exists(APK_PATH):
         notice("APK 文件不存在，开始下载...")
-        apk_path_downloaded = setup_apk_gl.download_xapk()
+        apk_path_downloaded = setup_apk_gl.download_xapk("https://d.apkpure.net/b/XAPK/com.nexon.bluearchive?version=latest&nc=arm64-v8a&sv=24")
         setup_apk_gl.extract_apk_file(apk_path_downloaded)
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
