@@ -8,7 +8,7 @@ from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
 
 def extract_apk_file(apk_path: str) -> None:
-    apk_files = ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR), keywords=["com.YostarJP.BlueArchive.apk"])
+    apk_files = ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR), keywords=["apk"])
     ZipUtils.extract_zip(apk_files, path.join(TEMP_DIR, "Data"), zips_dir=TEMP_DIR)
 
 def download_xapk() -> str:

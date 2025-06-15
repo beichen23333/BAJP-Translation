@@ -8,8 +8,7 @@ from lib.console import ProgressBar, notice
 TEMP_DIR = "Temp"
 
 def extract_apk_file(apk_path: str) -> None:
-    apk_files = ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR), keywords=["com.RoamingStar.BlueArchive.bilibili.apk"])
-    ZipUtils.extract_zip(apk_files, path.join(TEMP_DIR, "Data"), zips_dir=TEMP_DIR)
+    ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR, "Data"), zips_dir=TEMP_DIR)
 
 def get_apk_url() -> str:
     response = FileDownloader("https://bluearchive-cn.com/").get_response()
