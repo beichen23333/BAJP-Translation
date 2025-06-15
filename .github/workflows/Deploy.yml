@@ -25,17 +25,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run setup_flatdata.py to generate FlatData
+      - name: Check message and run corresponding tasks
         run: |
-          python setup_flatdata.py
-
-      - name: Download ExcelDB.db and Excel.zip
-        run: |
-          python download_files.py --env_file ./ba.env --output_dir ./downloads
-
-      - name: Unpack ExcelDB.db and generate JSON files
-        run: |
-          python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
+          message=${{ github.event.client_payload.message }}
+          if [ "$message" == "jp" ]; then
+            python regions/JP/setup_flatdata.py
+            python regions/JP/download_files.py --env_file ./ba.env --output_dir ./downloads
+            python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
+          elif [ "$message" == "cn" ]; then
+            python regions/CN/setup_flatdata_cn.py
+            python regions/CN/download_files_cn.py --env_file ./ba.env --output_dir ./downloads
+            python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip
+          elif [ "$message" == "gl" ]; then
+            python regions/GL/setup_flatdata_gl.py
+            python regions/GL/download_files_gl.py --env_file ./ba.env --output_dir ./downloads
+            python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip
+          else
+            echo "Unknown message: $message"
+          fi
 
       - name: Check file size and skip if over 100MB
         run: |

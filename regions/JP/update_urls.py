@@ -12,16 +12,8 @@ import re
 from pathlib import Path
 import setup_apk
 TEMP_DIR = "Temp"
+
 def decode_server_url(data: bytes) -> str:
-    """
-    Decodes the server URL from the given data.
-
-    Args:
-        data (bytes): Binary data to decode.
-
-    Returns:
-        str: Decoded server URL.
-    """
     ciphers = {
         "ServerInfoDataUrl": "X04YXBFqd3ZpTg9cKmpvdmpOElwnamB2eE4cXDZqc3ZgTg==",
         "DefaultConnectionGroup": "tSrfb7xhQRKEKtZvrmFjEp4q1G+0YUUSkirOb7NhTxKfKv1vqGFPEoQqym8=",
@@ -34,8 +26,8 @@ def decode_server_url(data: bytes) -> str:
     encrypted_url = obj[ciphers["ServerInfoDataUrl"]]
     url = convert_string(encrypted_url, create_key("ServerInfoDataUrl"))
     return url
+
 def get_server_url() -> str:
-    """Decrypt the server version from the game's binary files."""
     print("Retrieving game info...")
     url = version = ""
     for dir, _, files in os.walk(
@@ -64,26 +56,22 @@ def get_server_url() -> str:
     if not version:
         notice("Cannot retrieve apk version data.")
     return url
+
 def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
-    """Fetches and extracts the latest AddressablesCatalogUrlRoot from the server URL."""
     response = requests.get(server_url)
     if response.status_code != 200:
         raise LookupError(f"Failed to fetch data from {server_url}. Status code: {response.status_code}")
     
-    # Parse the JSON response
     data = response.json()
 
-    # Extract the last AddressablesCatalogUrlRoot from the OverrideConnectionGroups
     connection_groups = data.get("ConnectionGroups", [])
     if not connection_groups:
         raise LookupError("Cannot find ConnectionGroups in the server response.")
-    
-    # Get the last OverrideConnectionGroup
+
     override_groups = connection_groups[0].get("OverrideConnectionGroups", [])
     if not override_groups:
         raise LookupError("Cannot find OverrideConnectionGroups in the server response.")
 
-    # Get the last AddressablesCatalogUrlRoot in the list
     latest_catalog_url = override_groups[-1].get("AddressablesCatalogUrlRoot")
     if not latest_catalog_url:
         raise LookupError("Cannot find AddressablesCatalogUrlRoot in the last entry of OverrideConnectionGroups.")
@@ -93,27 +81,17 @@ def get_addressable_catalog_url(server_url: str, json_output_path: Path) -> str:
 
 import zipfile
 import xml.etree.ElementTree as ET
-from pyaxmlparser.axmlprinter import AXMLPrinter # Ensure this comes from your maintained AXMLParser package
+from pyaxmlparser.axmlprinter import AXMLPrinter
 
 def get_apk_version_info(apk_path):
     try:
-        # Open the APK as a ZIP file and read the binary AndroidManifest.xml
         with zipfile.ZipFile(apk_path, 'r') as apk:
             manifest_content = apk.read('AndroidManifest.xml')
-        
-        # Use AXMLPrinter to convert the binary XML into plain text XML.
-        # This class should also do the necessary cleanup of namespace URIs.
         xml_str = AXMLPrinter(manifest_content).get_xml()
-        
-        # Parse the XML string with ElementTree.
         root = ET.fromstring(xml_str)
         
-        # The version attributes are usually in the 'android' namespace.
-        # The AXMLPrinter (per docs) should have cleaned up the namespace URIs.
-        # Here we explicitly define the expected android namespace.
         android_ns = "http://schemas.android.com/apk/res/android"
         
-        # Extract versionCode and versionName using the namespace-qualified keys.
         version_code = root.attrib.get(f"{{{android_ns}}}versionCode")
         version_name = root.attrib.get(f"{{{android_ns}}}versionName")
         
@@ -133,8 +111,16 @@ if __name__ == "__main__":
     parser.add_argument("json_output_path", type=Path, help="output file for json from server url")
 
     args = parser.parse_args()
-    with open(args.output_path, "wb") as fs:
-        server_url = get_server_url()
-        addressable_catalog_url = get_addressable_catalog_url(server_url, args.json_output_path)
-        versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.YostarJP.BlueArchive.apk"))
-        fs.write(f"BA_SERVER_URL={server_url}\nADDRESSABLE_CATALOG_URL={addressable_catalog_url}\nBA_VERSION_CODE={versionCode}\nBA_VERSION_NAME={versionName}".encode())
+    server_url = get_server_url()
+    addressable_catalog_url = get_addressable_catalog_url(server_url, args.json_output_path)
+    versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.YostarJP.BlueArchive.apk"))
+
+    with open(args.output_path, "r") as fs:
+        lines = fs.readlines()
+
+    lines[0] = f"BA_SERVER_URL={server_url}"
+    lines[1] = f"ADDRESSABLE_CATALOG_URL={addressable_catalog_url}"
+    lines[2] = f"BA_VERSION_CODE={versionCode}"
+    lines[3] = f"BA_VERSION_CODE={versionCode}"
+    with open(args.output_path, "w") as fs:
+        fs.writelines(lines)
