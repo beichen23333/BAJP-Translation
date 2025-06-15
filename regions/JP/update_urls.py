@@ -10,7 +10,7 @@ import requests
 import subprocess
 import re
 from pathlib import Path
-import setup_apk
+import regions.JP.setup_apk
 TEMP_DIR = "Temp"
 
 def decode_server_url(data: bytes) -> str:

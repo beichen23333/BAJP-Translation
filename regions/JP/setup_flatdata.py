@@ -7,7 +7,7 @@ TEMP_DIR = "Temp"
 
 if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("FlatData directory does not exist. Setting up...")
-    import setup_apk
+    import regions.JP.setup_apk
     from lib.dumper import IL2CppDumper
     from lib.console import notice
     from utils.util import FileUtils

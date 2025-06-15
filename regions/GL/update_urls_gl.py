@@ -13,7 +13,7 @@ from pathlib import Path
 from shutil import move
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
-import setup_apk_gl
+import regions.GL.setup_apk_gl
 TEMP_DIR = "Temp"
 
 def get_latest_version() -> str:
