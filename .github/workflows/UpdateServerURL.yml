@@ -33,7 +33,7 @@ jobs:
 
       - name: Run update_urls_cn
         run: |
-          python -m regions.CN.update_urls_cn ba.env server-info.json
+          python -m regions.CN.CN_run ba.env server-info.json
 
       - name: Run update_urls_gl
         run: |

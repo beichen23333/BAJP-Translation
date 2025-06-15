@@ -7,11 +7,22 @@ TEMP_DIR = "Temp"
 
 if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("FlatData directory does not exist. Setting up...")
-    import regions.CN.setup_apk_cn
+    import regions.CN.setup_apk_cn as setup_apk_cn
     from lib.dumper import IL2CppDumper
     from lib.console import notice
     from utils.util import FileUtils
     from extractor import compile_python
+
+    os.makedirs(TEMP_DIR, exist_ok=True)
+
+    if not path.exists(APK_PATH):
+        notice("APK 文件不存在，开始获取下载链接并下载...")
+        apk_url = setup_apk_cn.get_apk_url()
+        notice(f"APK 链接: {apk_url}")
+        apk_path_downloaded = setup_apk_cn.download_apk(apk_url)
+        setup_apk_cn.extract_apk_file(apk_path_downloaded)
+    else:
+        notice("已存在 APK 文件，跳过下载步骤。")
 
     IL2CPP_NAME = "libil2cpp.so"
     METADATA_NAME = "global-metadata.dat"
