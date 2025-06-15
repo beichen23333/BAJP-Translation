@@ -29,16 +29,16 @@ jobs:
         run: |
           message=${{ github.event.client_payload.message }}
           if [ "$message" == "jp" ]; then
-            python regions/JP/setup_flatdata.py
-            python regions/JP/download_files.py --env_file ./ba.env --output_dir ./downloads
+            python -m BA_Chinese_Translation.regions.JP.setup_flatdata.py
+            python -m BA_Chinese_Translation.regions.JP.download_files.py --env_file ./ba.env --output_dir ./downloads
             python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
           elif [ "$message" == "cn" ]; then
-            python regions/CN/setup_flatdata_cn.py
-            python regions/CN/download_files_cn.py --env_file ./ba.env --output_dir ./downloads
+            python -m BA_Chinese_Translation.regions.CN.setup_flatdata_cn.py
+            python -m BA_Chinese_Translation.regions.CN.download_files_cn.py --env_file ./ba.env --output_dir ./downloads
             python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip
           elif [ "$message" == "gl" ]; then
-            python regions/GL/setup_flatdata_gl.py
-            python regions/GL/download_files_gl.py --env_file ./ba.env --output_dir ./downloads
+            python -m BA_Chinese_Translation.regions.GL.setup_flatdata_gl.py
+            python -m BA_Chinese_Translation.regions.GL.download_files_gl.py --env_file ./ba.env --output_dir ./downloads
             python unpack_excel_db.py --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip
           else
             echo "Unknown message: $message"

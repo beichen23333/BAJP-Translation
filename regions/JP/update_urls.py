@@ -1,9 +1,9 @@
-from ..lib.console import notice, print
-from ..utils.util import UnityUtils
+from BA_Chinese_Translation.lib.console import notice, print
+from BA_Chinese_Translation.utils.util import UnityUtils
 from os import path
 import os
 import base64
-from ..lib.encryption import convert_string, create_key
+from BA_Chinese_Translation.lib.encryption import convert_string, create_key
 import json
 import argparse
 import requests

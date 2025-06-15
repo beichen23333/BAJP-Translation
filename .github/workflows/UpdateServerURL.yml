@@ -29,15 +29,15 @@ jobs:
 
       - name: Run update_urls.py
         run: |
-          python regions/JP/update_urls.py ba.env server-info.json
+          python -m BA_Chinese_Translation.regions.JP.update_urls.py ba.env server-info.json
 
       - name: Run update_urls_cn.py
         run: |
-          python regions/CN/update_urls_cn.py ba.env server-info.json
+          python -m BA_Chinese_Translation.regions.CN.update_urls_cn.py ba.env server-info.json
 
       - name: Run update_urls_gl.py
         run: |
-          python regions/GL/update_urls_gl.py ba.env server-info.json
+          python -m BA_Chinese_Translation.regions.GL.update_urls_gl.py ba.env server-info.json
 
       - name: Check if ba.env was modified and detect which lines changed
         run: |

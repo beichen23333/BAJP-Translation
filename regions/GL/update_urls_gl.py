@@ -1,9 +1,9 @@
-from ..lib.console import notice, print
+from BA_Chinese_Translation.lib.console import notice, print
 from utils.util import UnityUtils
 from os import path
 import os
 import base64
-from ..lib.encryption import convert_string, create_key
+from BA_Chinese_Translation.lib.encryption import convert_string, create_key
 import json
 import argparse
 import requests
@@ -11,8 +11,8 @@ import subprocess
 import re
 from pathlib import Path
 from shutil import move
-from ..lib.downloader import FileDownloader
-from ..lib.console import ProgressBar, notice
+from BA_Chinese_Translation.lib.downloader import FileDownloader
+from BA_Chinese_Translation.lib.console import ProgressBar, notice
 import setup_apk_gl
 TEMP_DIR = "Temp"
 
