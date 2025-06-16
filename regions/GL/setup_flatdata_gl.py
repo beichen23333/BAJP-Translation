@@ -7,7 +7,7 @@ TEMP_DIR = "Temp"
 
 if path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("Removing existing FlatData directory...")
-    shutil.rmtree(flatdata_path)
+    shutil.rmtree(path.join(EXTRACT_DIR, "FlatData"))
 
 if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("FlatData directory does not exist. Setting up...")
