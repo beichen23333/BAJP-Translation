@@ -25,18 +25,12 @@ def download_excel_files(env_file: Path, output_dir: Path):
             env_vars[key] = value
     
     server_url = update_urls_cn.get_server_url()
-    
-    # 下载 server_url 指向的文件
-    server_file_path = output_dir / "server_file.json"  # 假设下载的文件是 JSON 格式
-    download_file(server_url, server_file_path)
-    
-    # 从下载的文件中搜索键 TableVersion 并创建变量
-    with open(server_file_path, "r", encoding="utf-8") as f:
-        server_data = json.load(f)
-        table_version = server_data.get("TableVersion")
-        if table_version is None:
-            raise KeyError("Key 'TableVersion' not found in the downloaded file.")
-        print(f"TableVersion: {table_version}")
+
+    server_data = json.load(server_url)
+    table_version = server_data.get("TableVersion")
+    if table_version is None:
+        raise KeyError("Key 'TableVersion' not found in the downloaded file.")
+    print(f"TableVersion: {table_version}")
     
     ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL_CN")
 
