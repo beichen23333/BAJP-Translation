@@ -25,11 +25,17 @@ def download_excel_files(env_file: Path, output_dir: Path):
             env_vars[key] = value
     
     server_url = update_urls_cn.get_server_url()
-    table_version = server_url.get("TableVersion")
+    try:
+        server_url_dict = json.loads(server_url)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse server_url as JSON: {e}")
+
+    # 从解析后的字典中获取 TableVersion
+    table_version = server_url_dict.get("TableVersion")
     if table_version is None:
         raise KeyError("Key 'TableVersion' not found in the downloaded file.")
     print(f"TableVersion: {table_version}")
-    
+
     ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL_CN")
 
     # 下载 TableManifest 文件
