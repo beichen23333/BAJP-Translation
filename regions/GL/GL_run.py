@@ -20,9 +20,8 @@ def main(output_path: Path, json_output_path: Path):
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
 
-    latest_version = update_urls_gl.get_latest_version()
-    server_url = update_urls_gl.get_server_url(latest_version)
     versionCode, versionName = update_urls_gl.get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
+    server_url = update_urls_gl.get_server_url(versionCode)
     addressable_catalog_url = server_url.rsplit('/', 1)[0]
 
     if not path.exists(output_path):

@@ -16,16 +16,6 @@ from lib.console import ProgressBar, notice
 
 TEMP_DIR = "Temp"
 
-def get_latest_version() -> str:
-    url = "https://blue-archive-global.en.uptodown.com/android"
-    if not (response := FileDownloader(url).get_response()):
-        raise LookupError("Cannot fetch resource catalog.")
-
-    if version_match := re.search(r"(\d+\.\d+\.\d+)", response.text):
-        return version_match.group(1)
-
-    raise LookupError("Unable to retrieve the version.")
-
 def get_server_url(version: str) -> str:
     request_body = {
         "market_game_id": "com.nexon.bluearchive",
