@@ -118,9 +118,14 @@ if __name__ == "__main__":
     with open(args.output_path, "r") as fs:
         lines = fs.readlines()
 
-    lines[0] = f"BA_SERVER_URL={server_url}"
-    lines[1] = f"ADDRESSABLE_CATALOG_URL={addressable_catalog_url}"
-    lines[2] = f"BA_VERSION_CODE={versionCode}"
-    lines[3] = f"BA_VERSION_CODE={versionCode}"
+    # 确保文件至少有 4 行，避免索引错误
+    while len(lines) < 4:
+        lines.append("\n")
+
+    # 替换指定的行
+    lines[0] = f"BA_SERVER_URL={server_url}\n"
+    lines[1] = f"ADDRESSABLE_CATALOG_URL={addressable_catalog_url}\n"
+    lines[2] = f"BA_VERSION_CODE={versionCode}\n"
+    lines[3] = f"BA_VERSION_NAME={versionName}\n" 
     with open(args.output_path, "w") as fs:
         fs.writelines(lines)

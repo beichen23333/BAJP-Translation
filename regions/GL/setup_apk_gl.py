@@ -11,7 +11,7 @@ def extract_apk_file(apk_path: str) -> None:
     apk_files = ZipUtils.extract_zip(apk_path, path.join(TEMP_DIR), keywords=["apk"])
     ZipUtils.extract_zip(apk_files, path.join(TEMP_DIR, "Data"), zips_dir=TEMP_DIR)
 
-def download_apk(apk_url: str) -> str:
+def download_xapk(apk_url: str) -> str:
     os.makedirs(TEMP_DIR, exist_ok=True)
     notice("Downloading APK...")
     apk_req = FileDownloader(apk_url, request_method="get", use_cloud_scraper=True, verbose=True)

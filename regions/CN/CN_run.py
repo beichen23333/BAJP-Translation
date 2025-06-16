@@ -39,7 +39,7 @@ def main(output_path: Path, json_output_path: Path):
         while len(lines) < 8:
             lines.append('\n')
 
-    lines[4] = f"BA_SERVER_URL_CN={server_url_json}\n"
+    lines[4] = f"BA_SERVER_URL_CN=https://gs-api.bluearchive-cn.com/api/state\n"
     lines[5] = f"ADDRESSABLE_CATALOG_URL_CN={addressable_url}\n"
     lines[6] = f"BA_VERSION_CODE_CN={version_code}\n"
     lines[7] = f"BA_VERSION_NAME_CN={version_name}\n"
