@@ -6,8 +6,28 @@ import regions.GL.setup_apk_gl as setup_apk_gl
 import regions.GL.update_urls_gl as update_urls_gl
 
 TEMP_DIR = "Temp"
-APK_NAME = "com.nexon.bluearchive"
+APK_NAME = "com.nexon.bluearchive.apk"
 APK_PATH = path.join(TEMP_DIR, APK_NAME)
+
+import requests
+
+def get_server_url(version: str) -> str:
+    request_body = {
+        "market_game_id": "com.nexon.bluearchive",
+        "market_code": "playstore",
+        "curr_build_version": version,
+        "curr_build_number": version.split(".")[-1],
+    }
+
+    try:
+        response = requests.post("https://api-pub.nexon.com/patch/v1.1/version-check", json=request_body)
+        if response.status_code == 200:
+            server_url = response.json()
+            return server_url.get("patch", {}).get("resource_path", "")
+    except Exception as e:
+        print(f"Error: {e}")
+
+    return ""
 
 def main(output_path: Path, json_output_path: Path):
 
@@ -15,12 +35,15 @@ def main(output_path: Path, json_output_path: Path):
 
     if not path.exists(APK_PATH):
         notice("APK 文件不存在，开始下载...")
-        apk_path_downloaded = setup_apk_gl.download_xapk("https://d.apkpure.net/b/XAPK/com.nexon.bluearchive?version=latest&nc=arm64-v8a&sv=24")
+        apk_path_downloaded = setup_apk_gl.download_xapk()
         setup_apk_gl.extract_apk_file(apk_path_downloaded)
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
 
     versionCode, versionName = update_urls_gl.get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
+    server_url = get_server_url(versionCode)
+    notice(f"server_url已获取，地址{server_url}。")
+    addressable_catalog_url = server_url.rsplit('/', 1)[0]
 
     if not path.exists(output_path):
         lines = ['\n'] * 12
@@ -30,8 +53,6 @@ def main(output_path: Path, json_output_path: Path):
         while len(lines) < 12:
             lines.append('\n')
 
-    server_url = update_urls_gl.get_server_url(versionCode)
-    addressable_catalog_url = server_url.rsplit('/', 1)[0]
     lines[8] = f"BA_SERVER_URL_GL={server_url}\n"
     lines[9] = f"ADDRESSABLE_CATALOG_URL_GL={addressable_catalog_url}\n"
     lines[10] = f"BA_VERSION_CODE_GL={versionCode}\n"

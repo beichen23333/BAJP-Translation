@@ -13,27 +13,8 @@ from pathlib import Path
 from shutil import move
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
-import requests
 
 TEMP_DIR = "Temp"
-
-def get_server_url(version: str) -> str:
-    request_body = {
-        "market_game_id": "com.nexon.bluearchive",
-        "market_code": "playstore",
-        "curr_build_version": version,
-        "curr_build_number": version.split(".")[-1],
-    }
-
-    try:
-        response = requests.post("https://api-pub.nexon.com/patch/v1.1/version-check", json=request_body)
-        if response.status_code == 200:
-            server_url = response.json()
-            return server_url.get("patch", {}).get("resource_path", "")
-    except Exception as e:
-        print(f"Error: {e}")
-
-    return ""
 
 import zipfile
 import xml.etree.ElementTree as ET

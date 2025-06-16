@@ -25,9 +25,7 @@ def download_excel_files(env_file: Path, output_dir: Path):
             env_vars[key] = value
     
     server_url = update_urls_cn.get_server_url()
-
-    server_data = json.load(server_url)
-    table_version = server_data.get("TableVersion")
+    table_version = server_url.get("TableVersion")
     if table_version is None:
         raise KeyError("Key 'TableVersion' not found in the downloaded file.")
     print(f"TableVersion: {table_version}")
