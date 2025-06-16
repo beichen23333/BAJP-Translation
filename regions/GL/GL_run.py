@@ -9,25 +9,6 @@ TEMP_DIR = "Temp"
 APK_NAME = "com.nexon.bluearchive.apk"
 APK_PATH = path.join(TEMP_DIR, APK_NAME)
 
-import requests
-
-def get_server_url(version: str) -> str:
-    request_body = {
-        "market_game_id": "com.nexon.bluearchive",
-        "market_code": "playstore",
-        "curr_build_version": version,
-        "curr_build_number": version.split(".")[-1],
-    }
-
-    try:
-        response = requests.post("https://api-pub.nexon.com/patch/v1.1/version-check", json=request_body)
-        if response.status_code == 200:
-            server_url = response.json()
-            return server_url.get("patch", {}).get("resource_path", "")
-    except Exception as e:
-        print(f"Error: {e}")
-
-    return ""
 
 def main(output_path: Path, json_output_path: Path):
 
@@ -41,7 +22,7 @@ def main(output_path: Path, json_output_path: Path):
         notice("已存在 APK 文件，跳过下载步骤。")
 
     versionCode, versionName = update_urls_gl.get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
-    server_url = get_server_url(versionCode)
+    server_url = update_urls_gl.get_server_url(versionCode)
     notice(f"server_url已获取，地址{server_url}。")
     addressable_catalog_url = server_url.rsplit('/', 1)[0]
 
