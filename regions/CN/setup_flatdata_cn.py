@@ -1,10 +1,13 @@
 from os import path
 import os
 import shutil
+import regions.CN.setup_apk_cn as setup_apk_cn
 
 EXTRACT_DIR = "Extracted"
 DUMP_PATH = "Dumps"
 TEMP_DIR = "Temp"
+APK_NAME = "com.RoamingStar.BlueArchive.bilibili.apk"
+APK_PATH = path.join(TEMP_DIR, APK_NAME)
 
 if path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("Removing existing FlatData directory...")

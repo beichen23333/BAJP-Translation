@@ -1,9 +1,13 @@
 from os import path
 import os
 import shutil
+import regions.GL.setup_apk_gl as setup_apk_gl
+
 EXTRACT_DIR = "Extracted"
 DUMP_PATH = "Dumps"
 TEMP_DIR = "Temp"
+APK_NAME = "com.nexon.bluearchive"
+APK_PATH = path.join(TEMP_DIR, APK_NAME)
 
 if path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("Removing existing FlatData directory...")
