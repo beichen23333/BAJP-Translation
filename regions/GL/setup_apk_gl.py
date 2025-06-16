@@ -2,6 +2,7 @@ from utils.util import ZipUtils
 from os import path
 import glob
 import os
+import shutil
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
 
