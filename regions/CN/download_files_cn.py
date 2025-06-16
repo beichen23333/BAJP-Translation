@@ -3,6 +3,7 @@ import sys
 import requests
 from pathlib import Path
 import json
+import regions.CN.update_urls_cn as update_urls_cn
 
 def download_file(url: str, output_file: Path):
     response = requests.get(url)
@@ -23,7 +24,7 @@ def download_excel_files(env_file: Path, output_dir: Path):
             key, value = line.strip().split("=")
             env_vars[key] = value
     
-    server_url = env_vars.get("BA_SERVER_URL_CN")
+    server_url = update_urls_cn.get_server_url()
     
     # 下载 server_url 指向的文件
     server_file_path = output_dir / "server_file.json"  # 假设下载的文件是 JSON 格式

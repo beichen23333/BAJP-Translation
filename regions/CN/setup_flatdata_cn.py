@@ -1,9 +1,14 @@
 from os import path
 import os
+import shutil
 
 EXTRACT_DIR = "Extracted"
 DUMP_PATH = "Dumps"
 TEMP_DIR = "Temp"
+
+if path.exists(path.join(EXTRACT_DIR, "FlatData")):
+    print("Removing existing FlatData directory...")
+    shutil.rmtree(flatdata_path)
 
 if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("FlatData directory does not exist. Setting up...")
