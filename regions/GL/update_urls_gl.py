@@ -13,6 +13,7 @@ from pathlib import Path
 from shutil import move
 from lib.downloader import FileDownloader
 from lib.console import ProgressBar, notice
+import requests
 
 TEMP_DIR = "Temp"
 
@@ -24,12 +25,13 @@ def get_server_url(version: str) -> str:
         "curr_build_number": version.split(".")[-1],
     }
 
-    if (
-        server_resp := FileDownloader(
-            "https://api-pub.nexon.com/patch/v1.1/version-check", request_method="post", json=request_body
-        ).get_response()
-    ) and (server_url := server_resp.json()):
-        return server_url.get("patch", {}).get("resource_path", "")
+    try:
+        response = requests.post("https://api-pub.nexon.com/patch/v1.1/version-check", json=request_body)
+        if response.status_code == 200:
+            server_url = response.json()
+            return server_url.get("patch", {}).get("resource_path", "")
+    except Exception as e:
+        print(f"Error: {e}")
 
     return ""
 
