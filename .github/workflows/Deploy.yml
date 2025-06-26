@@ -30,12 +30,6 @@ jobs:
           python -m regions.JP.setup_flatdata
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
-          python -m regions.CN.setup_flatdata_cn
-          python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip
-          python -m regions.GL.setup_flatdata_gl
-          python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip
 
       - name: Check file size and skip if over 100MB
         run: |
