@@ -28,7 +28,7 @@ def get_server_url(version: str) -> str:
         response = requests.post("https://api-pub.nexon.com/patch/v1.1/version-check", json=request_body)
         if response.status_code == 200:
             server_url = response.json()
-            return server_url.get("patch", {}).get("resource_path", "")
+            return server_url["patch"]["resource_path"]
     except Exception as e:
         print(f"Error: {e}")
 

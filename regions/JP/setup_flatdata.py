@@ -8,10 +8,10 @@ TEMP_DIR = "Temp"
 if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
     print("FlatData directory does not exist. Setting up...")
     import regions.JP.setup_apk
-    from lib.dumper import IL2CppDumper
+    from lib.dumper_Jp import IL2CppDumper
     from lib.console import notice
-    from utils.util import FileUtils
-    from extractor import compile_python
+    from utils.util_Jp import FileUtils
+    from extractor_Jp import compile_python
 
     IL2CPP_NAME = "libil2cpp.so"
     METADATA_NAME = "global-metadata.dat"
