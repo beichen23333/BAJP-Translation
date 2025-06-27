@@ -1,10 +1,10 @@
-name: Deploy File
+name: 反序列化部署
 
 on:
   workflow_dispatch:
     inputs:
       region:
-        description: 'Region to deploy (jp,cn,gl or comma-separated combination)'
+        description: '选择要部署的服务器（jp,cn,gl）'
         required: false
         default: 'all'
         type: string
