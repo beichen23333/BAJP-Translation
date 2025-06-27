@@ -80,12 +80,8 @@ jobs:
           detected_regions=()
           for line in $changed_lines; do
             region=${region_map[$line]}
-            if [ -n "$region" ]; then
-              echo "行 $line 变更 → $region 区域"
-              detected_regions+=($region)
-            else
-              echo "行 $line 变更 → 非目标区域"
-            fi
+            echo "行 $line 变更 → $region 区域"
+            detected_regions+=($region)
           done
 
           # 去重并排序
