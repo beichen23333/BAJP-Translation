@@ -1,135 +1,131 @@
-name: Update BA Server Config Url
+name: 更新BA服务器URL
 
 on:
   schedule:
     - cron: "0 * * * *"
   workflow_dispatch:
-    inputs:
-      force_run:
-        description: 'Force run all regions'
-        required: false
-        default: false
-        type: boolean
-  push:
-    paths:
-      - 'ba.env'
-
 permissions:
   contents: write
 
 jobs:
-  analyze_and_deploy:
+  更新:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 检出代码库
         uses: actions/checkout@v4
         with:
+          submodules: false
           fetch-depth: 2
 
-      - name: Setup Python
+      - name: 设置Python环境
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Detect changes
-        id: detect
+      - name: 安装依赖
         run: |
-          # 区域行号映射配置
-          declare -A region_map=(
-            ["1"]="jp_url" ["2"]="jp_catalog" ["3"]="jp_vercode" ["4"]="jp_vername"
-            ["5"]="cn_url" ["6"]="cn_catalog" ["7"]="cn_vercode" ["8"]="cn_vername"
-            ["9"]="gl_url" ["10"]="gl_catalog" ["11"]="gl_vercode" ["12"]="gl_vername"
-          )
+          pip install -r requirements.txt
+          echo "依赖安装完成，退出代码 $?"
 
-          git add ba.env
-          if git diff --cached --quiet; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "::notice::No changes detected in ba.env"
-            exit 0
-          fi
-
-          # 获取变更行号（增强兼容性）
-          changed_lines=$(git diff --cached -U0 ba.env | \
-                         grep -E '^\+[^\+]' | \
-                         awk -F: '/^\+[^\+]/ {print $1}' | \
-                         sort -nu)
-
-          echo "::group::变更诊断报告"
-          echo "变更行号: ${changed_lines}"
-          echo "变更内容:"
-          git diff --cached -U0 ba.env
-          echo "::endgroup::"
-
-          # 检测受影响区域
-          declare -A affected_regions
-          for line in $changed_lines; do
-            if [[ -v "region_map[$line]" ]]; then
-              region=${region_map[$line]%%_*}
-              affected_regions[$region]=1
-              echo "行 ${line} 变更 → ${region}区域 (${region_map[$line]})"
-            fi
-          done
-
-          if [ ${#affected_regions[@]} -eq 0 ]; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "::warning::无目标区域变更"
-          else
-            regions=$(IFS=,; echo "${!affected_regions[*]}")
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "regions=${regions}" >> $GITHUB_OUTPUT
-            echo "::notice::需要更新的区域: ${regions}"
-          fi
-
-      - name: Run updates
-        if: steps.detect.outputs.changed == 'true' || inputs.force_run
-        env:
-          TARGET_REGIONS: ${{ steps.detect.outputs.regions || 'jp,cn,gl' }}
+      - name: 更新所有区域
+        continue-on-error: true
         run: |
-          echo "::group::区域更新执行"
-          [[ "$TARGET_REGIONS" =~ "jp" ]] && {
-            echo "执行JP区域更新..."
-            python -m regions.JP.update_urls ba.env server-info.json
-          }
+          set +e  # 禁用错误退出
+          echo "=== 开始更新日服(JP) ==="
+          python -m regions.JP.update_urls ba.env server-info.json
+          echo "日服更新完成，退出代码 $?"
           
-          [[ "$TARGET_REGIONS" =~ "cn" ]] && {
-            echo "执行CN区域更新..."
-            python -m regions.CN.CN_run ba.env server-info.json
-          }
+          echo "=== 开始更新国服(CN) ==="
+          python -m regions.CN.CN_run ba.env server-info.json
+          echo "国服更新完成，退出代码 $?"
           
-          [[ "$TARGET_REGIONS" =~ "gl" ]] && {
-            echo "执行GL区域更新..."
-            python -m regions.GL.GL_run ba.env server-info.json
-          }
-          echo "::endgroup::"
+          echo "=== 开始更新国际服(GL) ==="
+          python -m regions.GL.GL_run ba.env server-info.json
+          echo "国际服更新完成，退出代码 $?"
+          set -e
 
-      - name: Commit changes
-        if: steps.detect.outputs.changed == 'true'
+      - name: 分析变更
+        id: 分析
+        continue-on-error: true
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git commit -m "自动更新: ${{ steps.detect.outputs.regions }}区域配置"
-          git push
+          git add ba.env || echo "git add 失败但继续执行..."
 
-      - name: Trigger deployment
-        if: steps.detect.outputs.changed == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARGET_REGIONS: ${{ steps.detect.outputs.regions }}
+          if git diff --cached --quiet; then
+            echo "::set-output name=changed::false"
+            echo "::warning::未检测到变更"
+            exit 0
+          fi
+
+          # 改进的行号检测方法
+          changed_lines=$(git diff --cached -U0 ba.env | \
+                         grep -E '^\+[^\+]' | \
+                         cut -d: -f1 | \
+                         sort -nu)
+          
+          echo "::group::变更行分析"
+          echo "检测到变更行: $changed_lines"
+          echo "完整差异:"
+          git diff --cached -U0 ba.env
+          echo "::endgroup::"
+
+          # 区域行号映射
+          declare -A region_map=(
+            ["1"]="jp" ["2"]="jp" ["3"]="jp" ["4"]="jp"
+            ["5"]="cn" ["6"]="cn" ["7"]="cn" ["8"]="cn" 
+            ["9"]="gl" ["10"]="gl" ["11"]="gl" ["12"]="gl"
+          )
+
+          detected_regions=()
+          for line in $changed_lines; do
+            region=${region_map[$line]}
+            if [ -n "$region" ]; then
+              echo "行 $line 变更 → $region 区域"
+              detected_regions+=($region)
+            else
+              echo "行 $line 变更 → 非目标区域"
+            fi
+          done
+
+          # 去重并排序
+          unique_regions=($(printf "%s\n" "${detected_regions[@]}" | sort -u))
+          
+          if [ ${#unique_regions[@]} -eq 0 ]; then
+            echo "::set-output name=changed::false"
+            echo "::warning::目标区域无变更"
+          else
+            message=$(IFS=,; echo "${unique_regions[*]}")
+            echo "::set-output name=changed::true"
+            echo "::set-output name=regions::$message"
+            echo "::notice::目标区域变更: $message"
+          fi
+
+      - name: 提交变更
+        if: steps.分析.outputs.changed == 'true'
         run: |
-          echo "::group::触发部署工作流"
-          curl -X POST \
-            -H "Authorization: token $GITHUB_TOKEN" \
+          git commit -m "自动更新: ${{ steps.分析.outputs.regions }}"
+          git push origin HEAD
+          echo "提交完成，退出代码 $?"
+
+      - name: 触发部署
+        if: steps.分析.outputs.changed == 'true'
+        env:
+          REGIONS: ${{ steps.分析.outputs.regions }}
+        run: |
+          echo "::group::正在为 $REGIONS 触发部署"
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/dispatches" \
             -d '{
               "event_type": "run-deployment",
               "client_payload": {
-                "regions": "'$TARGET_REGIONS'",
-                "trigger_time": "'$(date -u +"%FT%TZ")'"
+                "regions": "'$REGIONS'",
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
               }
             }'
-          echo "已触发 $TARGET_REGIONS 区域部署"
+          echo "Curl 退出代码: $?"
           echo "::endgroup::"
+          echo "部署触发成功"
