@@ -1,11 +1,22 @@
 name: Deploy File
+
 on:
   workflow_dispatch:
+    inputs:
+      region:
+        description: 'Region to deploy (jp,cn,gl or comma-separated combination)'
+        required: false
+        default: 'all'
+        type: string
   push:
+    paths:
+      - 'ba.env'
   repository_dispatch:
     types: [run-deployment]
+
 permissions:
   contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,6 +25,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
+
+      - name: Parse deployment trigger
+        id: parse-trigger
+        run: |
+          # 处理不同的触发方式
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            # 从repository_dispatch获取消息
+            MESSAGE="${{ github.event.client_payload.message }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 从手动触发输入获取区域
+            MESSAGE="${{ inputs.region }}"
+          else
+            # 对于push触发，处理所有区域
+            MESSAGE="all"
+          fi
+          
+          # 标准化消息格式
+          MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
+          echo "message=${MESSAGE}" >> $GITHUB_ENV
+          echo "Detected regions: ${MESSAGE}"
 
       - name: Set up Python 3.x
         uses: actions/setup-python@v5
@@ -25,11 +56,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check message and run corresponding tasks
+      - name: Run JP tasks if requested
+        if: contains(env.message, 'jp') || env.message == 'all'
         run: |
+          echo "Running JP tasks..."
           python -m regions.JP.setup_flatdata
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
+
+      - name: Run CN tasks if requested
+        if: contains(env.message, 'cn') || env.message == 'all'
+        run: |
+          echo "Running CN tasks..."
+          python -m regions.CN.setup_flatdata
+          python -m regions.CN.download_files --env_file ./ba.env --output_dir ./downloads
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip
+
+      - name: Run GL tasks if requested
+        if: contains(env.message, 'gl') || env.message == 'all'
+        run: |
+          echo "Running GL tasks..."
+          python -m regions.GL.setup_flatdata
+          python -m regions.GL.download_files --env_file ./ba.env --output_dir ./downloads
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip
 
       - name: Check file size and skip if over 100MB
         run: |
