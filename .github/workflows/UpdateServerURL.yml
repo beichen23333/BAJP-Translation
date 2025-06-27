@@ -1,4 +1,4 @@
-name: 更新BA服务器URL
+name: 更新Yostar服务器URL
 
 on:
   schedule:
@@ -45,7 +45,7 @@ jobs:
           set -e
 
       - name: 分析变更
-        id: 分析
+        id: analyze_changes  # 改为英文ID
         continue-on-error: true
         run: |
           git config --global user.name "GitHub Actions"
@@ -53,7 +53,7 @@ jobs:
           git add ba.env || echo "git add 失败但继续执行..."
 
           if git diff --cached --quiet; then
-            echo "::set-output name=changed::false"
+            echo "changed=false" >> $GITHUB_OUTPUT
             echo "::warning::未检测到变更"
             exit 0
           fi
@@ -92,26 +92,26 @@ jobs:
           unique_regions=($(printf "%s\n" "${detected_regions[@]}" | sort -u))
           
           if [ ${#unique_regions[@]} -eq 0 ]; then
-            echo "::set-output name=changed::false"
+            echo "changed=false" >> $GITHUB_OUTPUT
             echo "::warning::目标区域无变更"
           else
             message=$(IFS=,; echo "${unique_regions[*]}")
-            echo "::set-output name=changed::true"
-            echo "::set-output name=regions::$message"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "regions=$message" >> $GITHUB_OUTPUT
             echo "::notice::目标区域变更: $message"
           fi
 
       - name: 提交变更
-        if: steps.分析.outputs.changed == 'true'
+        if: steps.analyze_changes.outputs.changed == 'true'  # 使用英文ID
         run: |
-          git commit -m "自动更新: ${{ steps.分析.outputs.regions }}"
+          git commit -m "自动更新: ${{ steps.analyze_changes.outputs.regions }}"
           git push origin HEAD
           echo "提交完成，退出代码 $?"
 
       - name: 触发部署
-        if: steps.分析.outputs.changed == 'true'
+        if: steps.analyze_changes.outputs.changed == 'true'  # 使用英文ID
         env:
-          REGIONS: ${{ steps.分析.outputs.regions }}
+          REGIONS: ${{ steps.analyze_changes.outputs.regions }}  # 使用英文ID
         run: |
           echo "::group::正在为 $REGIONS 触发部署"
           curl -sS -X POST \
