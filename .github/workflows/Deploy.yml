@@ -52,7 +52,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run JP tasks if requested
-        if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "Running JP tasks..."
@@ -61,7 +60,6 @@ jobs:
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip || echo "JP unpack_excel_db failed, continuing..."
 
       - name: Run CN tasks if requested
-        if: contains(env.message, 'cn') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "Running CN tasks..."
@@ -70,7 +68,6 @@ jobs:
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "CN unpack_excel_db failed, continuing..."
 
       - name: Run GL tasks if requested
-        if: contains(env.message, 'gl') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "Running GL tasks..."
