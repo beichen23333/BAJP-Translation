@@ -34,7 +34,14 @@ jobs:
           echo "=== 开始更新日服(JP) ==="
           python -m regions.JP.update_urls ba.env server-info.json
           echo "日服更新完成，退出代码 $?"
+ 
+          echo "=== 开始更新国服(CN) ==="
+          python -m regions.CN.CN_run ba.env server-info.json
+          echo "国服更新完成，退出代码 $?"
           
+          echo "=== 开始更新国际服(GL) ==="
+          python -m regions.GL.GL_run ba.env server-info.json
+          echo "国际服更新完成，退出代码 $?"
           set -e
 
       - name: 分析变更
