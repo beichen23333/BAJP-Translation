@@ -29,19 +29,14 @@ jobs:
       - name: Parse deployment trigger
         id: parse-trigger
         run: |
-          # 处理不同的触发方式
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            # 从repository_dispatch获取消息
             MESSAGE="${{ github.event.client_payload.message }}"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # 从手动触发输入获取区域
             MESSAGE="${{ inputs.region }}"
           else
-            # 对于push触发，处理所有区域
             MESSAGE="all"
           fi
           
-          # 标准化消息格式
           MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
           echo "message=${MESSAGE}" >> $GITHUB_ENV
           echo "Detected regions: ${MESSAGE}"
@@ -58,29 +53,33 @@ jobs:
 
       - name: Run JP tasks if requested
         if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
         run: |
           echo "Running JP tasks..."
-          python -m regions.JP.setup_flatdata
-          python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip
+          python -m regions.JP.setup_flatdata || echo "JP setup_flatdata failed, continuing..."
+          python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "JP download_files failed, continuing..."
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip || echo "JP unpack_excel_db failed, continuing..."
 
       - name: Run CN tasks if requested
         if: contains(env.message, 'cn') || env.message == 'all'
+        continue-on-error: true
         run: |
           echo "Running CN tasks..."
-          python -m regions.CN.setup_flatdata
-          python -m regions.CN.download_files --env_file ./ba.env --output_dir ./downloads
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip
+          python -m regions.CN.setup_flatdata || echo "CN setup_flatdata failed, continuing..."
+          python -m regions.CN.download_files --env_file ./ba.env --output_dir ./downloads || echo "CN download_files failed, continuing..."
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "CN unpack_excel_db failed, continuing..."
 
       - name: Run GL tasks if requested
         if: contains(env.message, 'gl') || env.message == 'all'
+        continue-on-error: true
         run: |
           echo "Running GL tasks..."
-          python -m regions.GL.setup_flatdata
-          python -m regions.GL.download_files --env_file ./ba.env --output_dir ./downloads
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip
+          python -m regions.GL.setup_flatdata || echo "GL setup_flatdata failed, continuing..."
+          python -m regions.GL.download_files --env_file ./ba.env --output_dir ./downloads || echo "GL download_files failed, continuing..."
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip || echo "GL unpack_excel_db failed, continuing..."
 
       - name: Check file size and skip if over 100MB
+        continue-on-error: true
         run: |
           MAX_SIZE=$((100 * 1024 * 1024))
           for file in ./unpacked/*.json; do
@@ -94,6 +93,7 @@ jobs:
           done
 
       - name: Commit and push generated files
+        continue-on-error: true
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
         run: |
