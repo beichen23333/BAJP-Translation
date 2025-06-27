@@ -25,128 +25,107 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          echo "Dependencies installed successfully"
+          echo "Dependencies installed with exit code $?"
 
-      - name: Update JP URLs
+      - name: Update all regions
+        continue-on-error: true  # 关键修复：即使某个区域失败也继续执行
         run: |
-          echo "Updating JP server URLs..."
+          set +e  # 禁用错误退出
+          echo "=== Starting JP Update ==="
           python -m regions.JP.update_urls ba.env server-info.json
-          echo "JP update completed with exit code $?"
-
-      - name: Update CN URLs
-        run: |
-          echo "Updating CN server URLs..."
+          echo "JP update exited with $?"
+          
+          echo "=== Starting CN Update ==="
           python -m regions.CN.CN_run ba.env server-info.json
-          echo "CN update completed with exit code $?"
-
-      - name: Update GL URLs
-        run: |
-          echo "Updating GL server URLs..."
+          echo "CN update exited with $?"
+          
+          echo "=== Starting GL Update ==="
           python -m regions.GL.GL_run ba.env server-info.json
-          echo "GL update completed with exit code $?"
+          echo "GL update exited with $?"
+          set -e
 
-      - name: Analyze ba.env changes
-        id: analyze-changes
+      - name: Analyze changes
+        id: analyze
+        continue-on-error: true
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add ba.env
+          git add ba.env || echo "git add failed but continuing..."
 
           if git diff --cached --quiet; then
-            echo "::warning::No changes detected in ba.env"
-            echo "update_detected=false" >> $GITHUB_ENV
+            echo "::set-output name=changed::false"
+            echo "::warning::No changes detected"
             exit 0
           fi
 
-          echo "::notice::Detected changes in ba.env"
-          echo "update_detected=true" >> $GITHUB_ENV
-
-          # 获取变动的行号（改进方法）
-          changed_lines=$(git diff --cached -U0 ba.env | awk '/^\+[^+]/ {print NR}' | sort -nu)
-          echo "::group::Debug: Changed lines detection"
-          echo "Raw diff output:"
+          # 改进的行号检测方法
+          changed_lines=$(git diff --cached -U0 ba.env | \
+                         grep -E '^\+[^\+]' | \
+                         cut -d: -f1 | \
+                         sort -nu)
+          
+          echo "::group::Changed Lines Analysis"
+          echo "Detected changed lines: $changed_lines"
+          echo "Full diff:"
           git diff --cached -U0 ba.env
-          echo "Detected changed line numbers: $changed_lines"
           echo "::endgroup::"
 
-          # 初始化区域检测
-          declare -A regions=(
-            ["jp"]=0
-            ["cn"]=0 
-            ["gl"]=0
+          # 区域行号映射
+          declare -A region_map=(
+            ["1"]="jp" ["2"]="jp" ["3"]="jp" ["4"]="jp"
+            ["5"]="cn" ["6"]="cn" ["7"]="cn" ["8"]="cn" 
+            ["9"]="gl" ["10"]="gl" ["11"]="gl" ["12"]="gl"
           )
 
-          # 行号范围配置
-          declare -A line_ranges=(
-            ["jp"]="1-4"
-            ["cn"]="5-8"
-            ["gl"]="9-12"
-          )
-
-          # 检测每个变动的行
+          detected_regions=()
           for line in $changed_lines; do
-            echo "Analyzing line $line:"
-            
-            found=0
-            for region in "${!line_ranges[@]}"; do
-              IFS='-' read -ra range <<< "${line_ranges[$region]}"
-              if (( line >= range[0] && line <= range[1] )); then
-                echo "  → Belongs to $region region (lines ${line_ranges[$region]})"
-                ((regions[$region]++))
-                found=1
-                break
-              fi
-            done
-
-            if (( found == 0 )); then
-              echo "  → Not in any defined region"
+            region=${region_map[$line]}
+            if [ -n "$region" ]; then
+              echo "Line $line changed → $region region"
+              detected_regions+=($region)
+            else
+              echo "Line $line changed → Not in target regions"
             fi
           done
 
-          # 生成消息
-          message_parts=()
-          for region in "${!regions[@]}"; do
-            if (( regions[$region] > 0 )); then
-              message_parts+=("$region")
-              echo "Changes detected in $region region (${regions[$region]} lines changed)"
-            fi
-          done
-
-          if (( ${#message_parts[@]} == 0 )); then
-            echo "::warning::No changes in defined regions"
-            message="none"
+          # 去重并排序
+          unique_regions=($(printf "%s\n" "${detected_regions[@]}" | sort -u))
+          
+          if [ ${#unique_regions[@]} -eq 0 ]; then
+            echo "::set-output name=changed::false"
+            echo "::warning::No target regions changed"
           else
-            message=$(IFS=,; echo "${message_parts[*]}")
-            echo "::notice::Final regions to update: $message"
+            message=$(IFS=,; echo "${unique_regions[*]}")
+            echo "::set-output name=changed::true"
+            echo "::set-output name=regions::$message"
+            echo "::notice::Target regions changed: $message"
           fi
 
-          echo "message=$message" >> $GITHUB_ENV
-
       - name: Commit changes
-        if: env.update_detected == 'true'
+        if: steps.analyze.outputs.changed == 'true'
         run: |
-          git commit -m "Auto-update server URLs [${{ env.message }}]"
+          git commit -m "Auto-update: ${{ steps.analyze.outputs.regions }}"
           git push origin HEAD
-          echo "Changes committed successfully"
+          echo "Commit pushed with exit code $?"
 
       - name: Trigger deployment
-        if: env.update_detected == 'true' && env.message != 'none'
+        if: steps.analyze.outputs.changed == 'true'
         env:
-          MESSAGE: ${{ env.message }}
+          REGIONS: ${{ steps.analyze.outputs.regions }}
         run: |
-          echo "::group::Triggering deployment for regions: $MESSAGE"
-          curl -X POST \
-            -H "Accept: application/vnd.github+json" \
+          echo "::group::Triggering deployment for $REGIONS"
+          curl -sS -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/dispatches" \
             -d '{
               "event_type": "run-deployment",
               "client_payload": {
-                "message": "'"$MESSAGE"'",
-                "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
-                "trigger": "auto-update"
+                "regions": "'$REGIONS'",
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
               }
             }'
+          echo "Curl exit code: $?"
           echo "::endgroup::"
           echo "Deployment triggered successfully"
