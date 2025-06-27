@@ -1,4 +1,4 @@
-name: 更新Yostar服务器URL
+name: 更新BA服务器URL
 
 on:
   schedule:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  更新:
+  update:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码库
@@ -27,10 +27,10 @@ jobs:
           pip install -r requirements.txt
           echo "依赖安装完成，退出代码 $?"
 
-      - name: 更新所有区域
+      - name: 更新URL
         continue-on-error: true
         run: |
-          set +e  # 禁用错误退出
+          set +e
           echo "=== 开始更新日服(JP) ==="
           python -m regions.JP.update_urls ba.env server-info.json
           echo "日服更新完成，退出代码 $?"
@@ -45,7 +45,7 @@ jobs:
           set -e
 
       - name: 分析变更
-        id: analyze_changes  # 改为英文ID
+        id: analyze_changes
         continue-on-error: true
         run: |
           git config --global user.name "GitHub Actions"
@@ -102,16 +102,16 @@ jobs:
           fi
 
       - name: 提交变更
-        if: steps.analyze_changes.outputs.changed == 'true'  # 使用英文ID
+        if: steps.analyze_changes.outputs.changed == 'true'
         run: |
           git commit -m "自动更新: ${{ steps.analyze_changes.outputs.regions }}"
           git push origin HEAD
           echo "提交完成，退出代码 $?"
 
       - name: 触发部署
-        if: steps.analyze_changes.outputs.changed == 'true'  # 使用英文ID
+        if: steps.analyze_changes.outputs.changed == 'true'
         env:
-          REGIONS: ${{ steps.analyze_changes.outputs.regions }}  # 使用英文ID
+          REGIONS: ${{ steps.analyze_changes.outputs.regions }}
         run: |
           echo "::group::正在为 $REGIONS 触发部署"
           curl -sS -X POST \
