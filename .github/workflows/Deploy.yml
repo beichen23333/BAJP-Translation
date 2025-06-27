@@ -21,12 +21,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: 检出代码库
         uses: actions/checkout@v4
         with:
           submodules: false
 
-      - name: Parse deployment trigger
+      - name: 获取消息
         id: parse-trigger
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
@@ -41,17 +41,17 @@ jobs:
           echo "message=${MESSAGE}" >> $GITHUB_ENV
           echo "Detected regions: ${MESSAGE}"
 
-      - name: Set up Python 3.x
+      - name: 设置Python环境
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Install dependencies from requirements.txt
+      - name: 安装依赖
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run JP tasks if requested
+      - name: 运行日服反序列化
         if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         run: |
@@ -60,7 +60,7 @@ jobs:
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "JP download_files failed, continuing..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip || echo "JP unpack_excel_db failed, continuing..."
 
-      - name: Run CN tasks if requested
+      - name: 运行国服反序列化
         if: contains(env.message, 'cn') || env.message == 'all'
         continue-on-error: true
         run: |
@@ -69,7 +69,7 @@ jobs:
           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "CN download_files failed, continuing..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "CN unpack_excel_db failed, continuing..."
 
-      - name: Run GL tasks if requested
+      - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
         continue-on-error: true
         run: |
@@ -78,7 +78,7 @@ jobs:
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "GL download_files failed, continuing..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip || echo "GL unpack_excel_db failed, continuing..."
 
-      - name: Commit and push generated files
+      - name: 部署文件
         continue-on-error: true
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
