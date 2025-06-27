@@ -35,13 +35,6 @@ jobs:
           python -m regions.JP.update_urls ba.env server-info.json
           echo "日服更新完成，退出代码 $?"
           
-          echo "=== 开始更新国服(CN) ==="
-          python -m regions.CN.CN_run ba.env server-info.json
-          echo "国服更新完成，退出代码 $?"
-          
-          echo "=== 开始更新国际服(GL) ==="
-          python -m regions.GL.GL_run ba.env server-info.json
-          echo "国际服更新完成，退出代码 $?"
           set -e
 
       - name: 分析变更
@@ -70,19 +63,33 @@ jobs:
           git diff --cached -U0 ba.env
           echo "::endgroup::"
 
-          # 区域行号映射
+          # 区域前缀映射
           declare -A region_map=(
-            ["1"]="jp" ["2"]="jp" ["3"]="jp" ["4"]="jp"
-            ["5"]="cn" ["6"]="cn" ["7"]="cn" ["8"]="cn" 
-            ["9"]="gl" ["10"]="gl" ["11"]="gl" ["12"]="gl"
+            ["BA_SERVER_URL"]="jp"
+            ["ADDRESSABLE_CATALOG_URL"]="jp"
+            ["BA_VERSION_CODE"]="jp"
+            ["BA_VERSION_NAME"]="jp"
+            ["BA_SERVER_URL_CN"]="cn"
+            ["ADDRESSABLE_CATALOG_URL_CN"]="cn"
+            ["BA_VERSION_CODE_CN"]="cn"
+            ["BA_VERSION_NAME_CN"]="cn"
+            ["BA_SERVER_URL_GL"]="gl"
+            ["ADDRESSABLE_CATALOG_URL_GL"]="gl"
+            ["BA_VERSION_CODE_GL"]="gl"
+            ["BA_VERSION_NAME_GL"]="gl"
           )
 
           detected_regions=()
-          for line in $changed_lines; do
-            region=${region_map[$line]}
-            echo "行 $line 变更 → $region 区域"
-            detected_regions+=($region)
-          done
+          while IFS= read -r line; do
+            for prefix in "${!region_map[@]}"; do
+              if [[ "$line" == *"$prefix"* ]]; then
+                region=${region_map[$prefix]}
+                echo "行 $line 变更 → $region 区域"
+                detected_regions+=($region)
+                break
+              fi
+            done
+          done < <(git diff --cached -U0 ba.env | grep -E '^\+[^\+]')
 
           # 去重并排序
           unique_regions=($(printf "%s\n" "${detected_regions[@]}" | sort -u))
