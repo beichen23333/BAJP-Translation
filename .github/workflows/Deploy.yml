@@ -30,7 +30,7 @@ jobs:
         id: parse-trigger
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            MESSAGE="${{ github.event.client_payload.message }}"
+            MESSAGE="${{ github.event.client_payload.regions }}"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             MESSAGE="${{ inputs.region }}"
           else
@@ -77,20 +77,6 @@ jobs:
           python -m regions.GL.setup_flatdata_gl || echo "GL setup_flatdata failed, continuing..."
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "GL download_files failed, continuing..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip || echo "GL unpack_excel_db failed, continuing..."
-
-      - name: Check file size and skip if over 100MB
-        continue-on-error: true
-        run: |
-          MAX_SIZE=$((100 * 1024 * 1024))
-          for file in ./unpacked/*.json; do
-            if [ -f "$file" ]; then
-              filesize=$(stat -c%s "$file")
-              if [ "$filesize" -gt "$MAX_SIZE" ]; then
-                echo "File $file is larger than 100MB. Skipping."
-                rm "$file"
-              fi
-            fi
-          done
 
       - name: Commit and push generated files
         continue-on-error: true
