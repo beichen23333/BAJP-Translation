@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 from pathlib import Path
-
+from setup_utils import pack_to_zip
 def clean_json_file(file_path, keep_keys):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
