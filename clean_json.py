@@ -3,6 +3,7 @@ import json
 import argparse
 from pathlib import Path
 from setup_utils import pack_to_zip
+
 def clean_json_file(file_path, keep_keys):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -68,7 +69,17 @@ def main():
         else:
             print(f"File {file_path} not found, skipping.")
 
-    pack_to_zip(args.output_dir, args.zip_path)
+    # 获取所有处理过的文件路径
+    processed_files = [os.path.join(output_dir, file_name) for file_name in server_config.keys()]
+
+    # 删除多余的文件
+    for file_name in os.listdir(output_dir):
+        file_path = os.path.join(output_dir, file_name)
+        if file_path not in processed_files:
+            os.remove(file_path)
+            print(f"Deleted {file_path}")
+
+    pack_to_zip(processed_files, args.zip_path)
 
 if __name__ == "__main__":
     main()
