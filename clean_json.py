@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 
 def clean_json_file(file_path, keep_keys):
     try:
@@ -34,13 +34,16 @@ def clean_json(data, keep_keys):
         return data
 
 def pack_to_zip(file_paths, zip_path):
-    with ZipFile(zip_path, 'w') as zipf:
+    # 确保输出目录存在
+    os.makedirs(os.path.dirname(zip_path), exist_ok=True)
+    
+    with ZipFile(zip_path, 'w', compression=ZIP_DEFLATED) as zipf:
         for file_path in file_paths:
             if os.path.exists(file_path):
-                # 确保文件路径是相对于 output_dir 的相对路径
-                rel_path = os.path.relpath(file_path, start=os.path.dirname(file_paths[0]))
-                zipf.write(file_path, rel_path)
-                print(f"Added {file_path} to {zip_path}")
+                # 使用文件名作为zip中的路径，避免目录结构
+                arcname = os.path.basename(file_path)
+                zipf.write(file_path, arcname)
+                print(f"Added {file_path} to {zip_path} as {arcname}")
             else:
                 print(f"File {file_path} not found, skipping.")
 
@@ -73,25 +76,28 @@ def main():
         return
 
     # 遍历配置中的每个文件和对应的保留键
+    processed_files = []
     for file_name, keep_keys in server_config.items():
         file_path = os.path.join(output_dir, file_name)
         if os.path.exists(file_path):
             clean_json_file(file_path, keep_keys)
+            processed_files.append(file_path)
         else:
             print(f"File {file_path} not found, skipping.")
-
-    # 获取所有处理过的文件路径
-    processed_files = [os.path.join(output_dir, file_name) for file_name in server_config.keys()]
 
     # 删除多余的文件
     for file_name in os.listdir(output_dir):
         file_path = os.path.join(output_dir, file_name)
-        if file_path not in processed_files:
+        if file_path not in processed_files and os.path.isfile(file_path):
             os.remove(file_path)
             print(f"Deleted {file_path}")
 
     # 压缩处理过的文件
-    pack_to_zip(processed_files, args.zip_path)
+    if processed_files:
+        pack_to_zip(processed_files, args.zip_path)
+        print(f"Successfully created ZIP archive at {args.zip_path}")
+    else:
+        print("No files processed, skipping ZIP creation.")
 
 if __name__ == "__main__":
     main()
