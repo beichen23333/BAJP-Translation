@@ -118,10 +118,7 @@ jobs:
         if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         run: |
-          cp -r BA-Assets-TableBundles/日服 BA-Text/
           cp -r ba.env BA-Text/
-          cp -r ./unpacked/日服${BA_VERSION_NAME}.zip BA-Text/
-          mv BA-Assets-TableBundles/日服${BA_VERSION_NAME}.zip BA-Assets-TableBundles/日服原版DB.zip
           cd BA-Text
           git add .
           if git diff-index --quiet HEAD; then

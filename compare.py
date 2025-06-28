@@ -4,7 +4,7 @@ import zipfile
 import shutil
 from setup_utils import read_json, extract_zip
 
-ba_env_path1 = 'BA-Text/ba.env'
+ba_env_path1 = 'ba.env'
 ba_env_path2 = 'BA-Assets-TableBundles/ba.env'
 config_path = '配置.json'
 
@@ -58,7 +58,7 @@ def main():
         os.makedirs(extract_to2, exist_ok=True)
         
         extract_zip(f'BA-Assets-TableBundles/日服{version2}.zip', extract_to1)
-        extract_zip(f'BA-Text/日服原版DB.zip', extract_to2)
+        extract_zip(f'BA-Assets-TableBundles/日服{version1}.zip', extract_to2)
         
         # 比较json文件
         compare_json_files(extract_to1, extract_to2, db_schema)

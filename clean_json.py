@@ -37,7 +37,9 @@ def pack_to_zip(file_paths, zip_path):
     with ZipFile(zip_path, 'w') as zipf:
         for file_path in file_paths:
             if os.path.exists(file_path):
-                zipf.write(file_path, os.path.relpath(file_path, start=os.path.dirname(file_paths[0])))
+                # 确保文件路径是相对于 output_dir 的相对路径
+                rel_path = os.path.relpath(file_path, start=os.path.dirname(file_paths[0]))
+                zipf.write(file_path, rel_path)
                 print(f"Added {file_path} to {zip_path}")
             else:
                 print(f"File {file_path} not found, skipping.")
@@ -81,15 +83,15 @@ def main():
     # 获取所有处理过的文件路径
     processed_files = [os.path.join(output_dir, file_name) for file_name in server_config.keys()]
 
+    # 压缩处理过的文件
+    pack_to_zip(processed_files, args.zip_path)
+
     # 删除多余的文件
     for file_name in os.listdir(output_dir):
         file_path = os.path.join(output_dir, file_name)
         if file_path not in processed_files:
             os.remove(file_path)
             print(f"Deleted {file_path}")
-
-    # 压缩处理过的文件
-    pack_to_zip(processed_files, args.zip_path)
 
 if __name__ == "__main__":
     main()
