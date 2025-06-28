@@ -30,12 +30,6 @@ def convert_to_basic_types(obj):
     else:
         return str(obj)
 
-def pack_to_zip(output_dir: Path, zip_path: Path):
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for file_path in output_dir.rglob("*.json"):
-            zipf.write(file_path, file_path.relative_to(output_dir))
-    print(f"Packed JSON files into {zip_path}")
-
 def deserialize_flatbuffer(bytes_data: bytes, flatbuffers_dir: Path, table_type: str):
     flatbuffer_class_name = table_type
     flatbuffer_module_path = flatbuffers_dir / f"{flatbuffer_class_name}.py"

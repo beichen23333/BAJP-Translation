@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 from pathlib import Path
-from setup_utils import pack_to_zip
+from zipfile import ZipFile
 
 def clean_json_file(file_path, keep_keys):
     try:
@@ -32,6 +32,15 @@ def clean_json(data, keep_keys):
         return [clean_json(item, keep_keys) for item in data]
     else:
         return data
+
+def pack_to_zip(file_paths, zip_path):
+    with ZipFile(zip_path, 'w') as zipf:
+        for file_path in file_paths:
+            if os.path.exists(file_path):
+                zipf.write(file_path, os.path.relpath(file_path, start=os.path.dirname(file_paths[0])))
+                print(f"Added {file_path} to {zip_path}")
+            else:
+                print(f"File {file_path} not found, skipping.")
 
 def main():
     parser = argparse.ArgumentParser(description="Clean JSON files in a directory based on a configuration file.")
@@ -79,6 +88,7 @@ def main():
             os.remove(file_path)
             print(f"Deleted {file_path}")
 
+    # 压缩处理过的文件
     pack_to_zip(processed_files, args.zip_path)
 
 if __name__ == "__main__":

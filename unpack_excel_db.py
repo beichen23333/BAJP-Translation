@@ -4,7 +4,7 @@ import sqlite3
 import json
 import inspect
 from pathlib import Path
-from setup_utils import dynamic_import_module, convert_to_basic_types, pack_to_zip, deserialize_flatbuffer
+from setup_utils import dynamic_import_module, convert_to_basic_types, deserialize_flatbuffer
 
 def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
     conn = sqlite3.connect(db_path)
