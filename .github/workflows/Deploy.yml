@@ -65,9 +65,10 @@ jobs:
         continue-on-error: true
         run: |
           echo "Running CN tasks..."
-      #    python -m regions.CN.setup_flatdata_cn || echo "CN setup_flatdata failed, continuing..."
-      #    python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "CN download_files failed, continuing..."
-      #    python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "CN unpack_excel_db failed, continuing..."
+           #国服加密无解
+           #python -m regions.CN.setup_flatdata_cn || echo "CN setup_flatdata failed, continuing..."
+           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "CN download_files failed, continuing..."
+           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "CN unpack_excel_db failed, continuing..."
 
       - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
