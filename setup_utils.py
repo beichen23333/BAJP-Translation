@@ -73,3 +73,13 @@ def deserialize_flatbuffer(bytes_data: bytes, flatbuffers_dir: Path, table_type:
         except Exception as e:
             print(f"Error reading field {field_name} in {table_type}: {e}")
     return result
+
+# 解压zip文件
+def extract_zip(zip_path, extract_to):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
+
+# 读取json文件
+def read_json(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)

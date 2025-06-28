@@ -56,7 +56,8 @@ jobs:
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "日服反序列化..."
-          python -m clean_json --output_dir ./unpacked --server 日服 --zip_path ./unpacked/日服原版DB.zip || echo "日服过滤..."
+          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
+          python -m clean_json --output_dir ./unpacked --server 日服 --zip_path ./unpacked/日服${BA_VERSION_NAME}.zip || echo "日服过滤..."
 
       - name: 运行国服反序列化
         if: contains(env.message, 'cn') || env.message == 'all'
@@ -79,7 +80,7 @@ jobs:
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData  || echo "国际服反序列化..."
           python -m clean_json --output_dir ./unpacked --server 国际服 --zip_path ./unpacked/国际服原版DB.zip || echo "国际服过滤..."
 
-      - name: 部署文件
+      - name: 提交变更
         continue-on-error: true
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
@@ -88,7 +89,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git clone "$TARGET_REPO_URL" BA-Assets-TableBundles
           cp -r ./unpacked/*.zip BA-Assets-TableBundles/
-
+          cp -r ba.env BA-Assets-TableBundles/
           cd BA-Assets-TableBundles
           git add .
           if git diff-index --quiet HEAD; then
@@ -97,3 +98,36 @@ jobs:
             git commit -m "提交文件"
             git push origin
           fi
+          cd ..
+
+      - name: 克隆BA-Text
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        env:
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+        run: |
+          git clone "$TARGET_REPO_URL"
+
+      - name: 运行过滤
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        run: |
+          python compare.py
+
+      - name: 提交过滤文件
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        run: |
+          cp -r BA-Assets-TableBundles/日服 BA-Text/
+          cp -r ba.env BA-Text/
+          cp -r ./unpacked/日服${BA_VERSION_NAME}.zip BA-Text/
+          mv BA-Assets-TableBundles/日服${BA_VERSION_NAME}.zip BA-Assets-TableBundles/日服原版DB.zip
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
