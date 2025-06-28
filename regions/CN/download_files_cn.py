@@ -8,15 +8,15 @@ import regions.CN.update_urls_cn as update_urls_cn
 def download_file(url: str, output_file: Path):
     response = requests.get(url)
     if response.status_code != 200:
-        raise ConnectionError(f"Failed to download {url}. Status code: {response.status_code}")
+        raise ConnectionError(f"无法下载 {url}. 状态代码: {response.status_code}")
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "wb") as f:
         f.write(response.content)
-    print(f"Downloaded {url} and saved as {output_file}")
+    print(f"下载 {url} 并保存至 {output_file}")
 
 def download_excel_files(env_file: Path, output_dir: Path):
     if not env_file.exists():
-        raise FileNotFoundError(f"Environment file {env_file} not found.")
+        raise FileNotFoundError(f"环境文件 {env_file} 没有找到")
     
     env_vars = {}
     with open(env_file, "r") as f:
@@ -28,12 +28,12 @@ def download_excel_files(env_file: Path, output_dir: Path):
     try:
         server_url_dict = json.loads(server_url)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to parse server_url as JSON: {e}")
+        raise ValueError(f"无法将server_url解析为JSON: {e}")
 
     # 从解析后的字典中获取 TableVersion
     table_version = server_url_dict.get("TableVersion")
     if table_version is None:
-        raise KeyError("Key 'TableVersion' not found in the downloaded file.")
+        raise KeyError("在下载的文件中找不到键TableVersion")
     print(f"TableVersion: {table_version}")
 
     ba_server_url = env_vars.get("ADDRESSABLE_CATALOG_URL_CN")
@@ -48,11 +48,11 @@ def download_excel_files(env_file: Path, output_dir: Path):
         table_manifest_data = json.load(f)
         excel_db_info = table_manifest_data.get("Table", {}).get("ExcelDB.db")
         if not excel_db_info:
-            raise KeyError("ExcelDB.db information not found in TableManifest.")
+            raise KeyError("ExcelDB.db在TableManifest中找不到信息。")
         crc_value = excel_db_info.get("Crc")
         if not crc_value:
-            raise KeyError("Crc value for ExcelDB.db not found in TableManifest.")
-        print(f"Crc value for ExcelDB.db: {crc_value}")
+            raise KeyError("ExcelDB.db的CRC值未在TableManifest找到")
+        print(f"ExcelDB.db的CRC值: {crc_value}")
 
     # 构造最终的下载链接
     crc_prefix = crc_value[:2]
@@ -65,8 +65,7 @@ def download_excel_files(env_file: Path, output_dir: Path):
     download_file(excel_db_download_url, excel_db_path)
     download_file(excel_zip_download_url, excel_zip_path)
 
-    print(f"Downloaded ExcelDB.db to {excel_db_path}")
-    print(f"Downloaded Excel.zip to {excel_zip_path}")
+    print(f"下载文件")
 
 if __name__ == "__main__":
     import argparse

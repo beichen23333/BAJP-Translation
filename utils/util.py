@@ -383,6 +383,7 @@ class FileUtils:
                     break
 
         return sorted_paths
+
 class CommandUtils:
     @staticmethod
     def run_command(
@@ -412,3 +413,30 @@ class CommandUtils:
         except Exception as e:
             err = f"Command failed while excute command '{' '.join(list(commands))}' with error: {e}."
             return False, err
+
+class CommandUtils_Jp:
+    @staticmethod
+    def run_command(
+        *commands: str,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
+        """
+        Executes a shell command and returns whether it succeeded.
+
+        Args:
+            *commands (str): Command and its arguments as separate strings.
+
+        Returns:
+            tuple (bool, str): True if the command succeeded, False otherwise. And error string.
+        """
+        try:
+            subprocess.run(
+                list(commands),
+                check=True,
+                text=True,
+                cwd=cwd,
+                encoding="utf8",
+            )
+            return True, ""
+        except Exception as e:
+            return False, e

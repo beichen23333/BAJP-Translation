@@ -4,6 +4,7 @@ from pathlib import Path
 from lib.console import notice
 import regions.CN.setup_apk_cn as setup_apk_cn
 import regions.CN.update_urls_cn as update_urls_cn
+from regions.get_apk_version import get_apk_version_info
 
 TEMP_DIR = "Temp"
 APK_NAME = "com.RoamingStar.BlueArchive.bilibili.apk"
@@ -25,7 +26,7 @@ def main(output_path: Path, json_output_path: Path):
     server_url_json = update_urls_cn.get_server_url()
     addressable_url = update_urls_cn.get_addressable_catalog_url(server_url_json, json_output_path)
 
-    version_info = update_urls_cn.get_apk_version_info(APK_PATH)
+    version_info = get_apk_version_info(APK_PATH)
     if version_info is None:
         notice("无法从 APK 提取版本信息。")
         return

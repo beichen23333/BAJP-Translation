@@ -50,7 +50,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add ba.env || echo "git add 失败但继续执行..."
+          git add ba.env || echo "git add 失败..."
 
           if git diff --cached --quiet; then
             echo "changed=false" >> $GITHUB_OUTPUT

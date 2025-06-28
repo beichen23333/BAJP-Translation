@@ -401,6 +401,131 @@ class CSParser:
             structs.append(StructTable(struct.name + "Table", [Property(struct.name, 'DataList', True)]))
         return structs
 
+class Re_Jp:
+    struct = re.compile(
+        r"""\s*struct (.{0,128}?) :.{0,128}?IFlatbufferObject.{0,128}?
+\s*\{
+(.+?)
+\s*\}
+""",
+        re.M | re.S,
+    )
+    """Get structure name and its field."""
+
+    struct_property = re.compile(r"""public (?:FlatData\.)?(.+?)\?? (.+?) { get(?: => default)?; }""")
+    """Get property type and name in field."""
+
+    enum = re.compile(
+        r"""
+public\s+enum\s+(.{1,128}?)\s*//\s*TypeDefIndex:\s*\d+\s*
+\{\s*
+(.*?)
+\s*\}
+        """,
+        re.M | re.S | re.X,
+    )
+
+    """Get value, type of enum and enum field."""
+    enum_member = re.compile(r"(.+?) = (-?\d+)")
+    """Get member name, value in enum."""
+
+    table_data_type = re.compile(r"public (.+?)\? DataList\(int j\) => default;")
+
+
+class CSParser_Jp:
+    def __init__(self, file_path: str) -> None:
+        with open(file_path, "rt", encoding="utf8") as file:
+            self.data = file.read()
+            start_token = "namespace FlatData"
+            start_idx = self.data.find(start_token)
+
+            if start_idx == -1:
+                self.flatdata_part = ""
+                return
+
+            brace_idx = self.data.find("{", start_idx)
+            if brace_idx == -1:
+                self.flatdata_part = ""
+                return
+
+            index = brace_idx
+            open_braces = 1
+
+            while index < len(self.data) - 1 and open_braces > 0:
+                index += 1
+                if self.data[index] == "{":
+                    open_braces += 1
+                elif self.data[index] == "}":
+                    open_braces -= 1
+
+            self.flatdata_part = self.data[start_idx:index + 1]
+
+    def parse_enum(self) -> list[EnumType]:
+        """Extract enum from cs."""
+        enums = []
+        for enum_name, content in Re_Jp.enum.findall(self.flatdata_part):
+            if "." in enum_name:
+                continue
+
+            enum_members = []
+            for name, value in Re_Jp.enum_member.findall(content):
+                enum_members.append(EnumMember(name.strip(), value))
+
+            enums.append(EnumType(enum_name, "int", enum_members))
+
+        return enums
+
+    def __parse_struct_property(
+        self, prop_type: str, prop_name: str, prop_data: str
+    ) -> Property:
+        """Extract struct from cs."""
+        # Has list in struct if there have its length property.
+        prop_is_list = False
+
+        prop_type = prop_type.removeprefix("Nullable<").removesuffix(">")
+
+        if len(prop_name) > 6 and prop_name.endswith("Length"):
+            list_name = prop_name.removesuffix("Length")
+            re_type_of_list = re.search(
+                rf"public (?:FlatData\.)?(.+?)\?? {list_name}\(int j\) => default;", prop_data
+            )  # Get object type in list.
+
+            if re_type_of_list:
+                list_type = re_type_of_list.group(1)
+                prop_is_list = True
+
+                list_type = list_type.removeprefix("Nullable<").removesuffix(">")
+
+                return Property(list_type, list_name, prop_is_list)
+
+        return Property(prop_type, prop_name, prop_is_list)
+
+    def parse_struct(self) -> list[StructTable]:
+        """从数据中提取结构体"""
+        structs = []
+        # struct name, field
+        for struct_name, struct_data in Re_Jp.struct.findall(self.data):
+            struct_properties = []
+            for prop in Re_Jp.struct_property.finditer(struct_data):
+                prop_type = prop.group(1)
+                prop_name = prop.group(2)
+
+                if "ByteBuffer" in prop_name:
+                    continue
+
+                if extracted_property := self.__parse_struct_property(
+                    prop_type, prop_name, struct_data
+                ):
+                    struct_properties.append(extracted_property)
+
+            if struct_properties:
+                structs.append(StructTable(struct_name, struct_properties))
+        structs = [struct for struct in structs if not struct.name.endswith("ExcelTable")]
+        for struct in tuple(structs):
+            if not struct.name.endswith("Excel"):
+                continue
+            structs.append(StructTable(struct.name + "Table", [Property(struct.name, 'DataList', True)]))
+        return structs
 
 class CompileToPython:
     DUMP_WRAPPER_NAME = "dump_wrapper"

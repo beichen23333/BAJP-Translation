@@ -7,7 +7,7 @@ import time
 from multiprocessing import Queue, freeze_support
 from os import path
 
-from lib.compiler import CompileToPython, CSParser
+from lib.compiler import CompileToPython, CSParser, CSParserJp
 from lib.console import ProgressBar, bar_increase, bar_text, notice
 from utils.util import TaskManager
 from xtractor.bundle import BundleExtractor
@@ -93,6 +93,22 @@ def compile_python(DUMP_CS_FILE_PATH, EXTRACT_DIR) -> None:
     compiler.create_module_file()
     compiler.create_dump_dict_file()
     compiler.create_repack_dict_file()
+
+def compile_python_Jp(DUMP_CS_FILE_PATH, EXTRACT_DIR) -> None:
+    """Compile python callable module from dump file"""
+    print("Parsing dump.cs...")
+    parser = CSParser_Jp(DUMP_CS_FILE_PATH)
+    enums = parser.parse_enum()
+    structs = parser.parse_struct()
+    
+    print("Generating flatbuffer python dump files...")
+    compiler = CompileToPython(enums, structs, path.join(EXTRACT_DIR, "FlatData"))
+    compiler.create_enum_files()
+    compiler.create_struct_files()
+    compiler.create_module_file()
+    compiler.create_dump_dict_file()
+    compiler.create_repack_dict_file()
+
 class TableExtractorImpl:
     def __init__(self, flat_data_module_name):
         try:

@@ -4,6 +4,7 @@ from pathlib import Path
 from lib.console import notice
 import regions.GL.setup_apk_gl as setup_apk_gl
 import regions.GL.update_urls_gl as update_urls_gl
+from regions.get_apk_version import get_apk_version_info
 
 TEMP_DIR = "Temp"
 APK_NAME = "com.nexon.bluearchive.apk"
@@ -21,7 +22,7 @@ def main(output_path: Path, json_output_path: Path):
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
 
-    versionCode, versionName = update_urls_gl.get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
+    versionCode, versionName = get_apk_version_info(path.join(TEMP_DIR, "com.nexon.bluearchive.apk"))
     server_url = update_urls_gl.get_server_url(versionName)
     notice(f"server_url已获取，地址{server_url}。")
     addressable_catalog_url = server_url.rsplit('/', 1)[0]

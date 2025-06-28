@@ -42,7 +42,7 @@ if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
 
     if not (il2cpp_path and metadata_path):
         raise FileNotFoundError(
-            "Cannot find il2cpp binary file or global-metadata file. Make sure they exist."
+            "无法找到il2cpp文件或global-metadata文件，请确保它们存在。"
         )
 
     abs_il2cpp_path = path.abspath(il2cpp_path[0])
@@ -50,12 +50,12 @@ if not path.exists(path.join(EXTRACT_DIR, "FlatData")):
 
     extract_path = path.abspath(path.join(EXTRACT_DIR, DUMP_PATH))
 
-    print("Trying to dump il2cpp...")
+    print("尝试dump il2cpp...")
     dumper.dump_il2cpp(
         extract_path, abs_il2cpp_path, abs_metadata_path, 5
     )
-    notice("Dump il2cpp binary file successfully.")
+    notice("Dump il2cpp文件成功")
     compile_python(path.join(extract_path, "dump.cs"), EXTRACT_DIR)
-    notice("Generated FlatData to dir: " + EXTRACT_DIR)
+    notice("生成FlatData到路径: " + EXTRACT_DIR)
 else:
-    print("FlatData directory already exists. Skipping setup.")
+    print("FlatData目录已经存在，跳过设置。")
