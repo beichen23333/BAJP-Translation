@@ -8,7 +8,6 @@ ba_env_path1 = 'ba.env'
 ba_env_path2 = 'BA-Assets-TableBundles/ba.env'
 config_path = '配置.json'
 
-# 读取ba.env文件中的BA_VERSION_NAME
 def read_ba_version(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         for line in file:
@@ -16,7 +15,6 @@ def read_ba_version(file_path):
                 return line.strip().split('=')[1]
     return None
 
-# 比较两个文件夹中的json文件
 def compare_json_files(folder1, folder2, config):
     for file_name, keys in config.items():
         file_path1 = os.path.join(folder1, file_name)
@@ -31,7 +29,9 @@ def compare_json_files(folder1, folder2, config):
             data2 = json.load(file2)
             
             key = keys[0]
+            # 获取文件1中所有键值
             data1_keys = {item[key] for item in data1}
+            # 保留文件2中键值不在文件1中的条目
             filtered_data2 = [item for item in data2 if item[key] not in data1_keys]
             
             # 将过滤后的数据写回文件
@@ -67,7 +67,12 @@ def main():
         processed_folder = 'BA-Text/日服'
         os.makedirs(processed_folder, exist_ok=True)
         for file_name in db_schema.keys():
-            shutil.move(os.path.join(extract_to2, file_name), os.path.join(processed_folder, file_name))
+            src_path = os.path.join(extract_to2, file_name)
+            dst_path = os.path.join(processed_folder, file_name)
+            if os.path.exists(src_path):
+                shutil.move(src_path, dst_path)
+            else:
+                print(f"警告: 文件 {file_name} 不存在于 {extract_to2}")
 
         # 清理解压文件夹
         shutil.rmtree(extract_to1)

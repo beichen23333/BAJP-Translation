@@ -83,15 +83,15 @@ def main():
     # 获取所有处理过的文件路径
     processed_files = [os.path.join(output_dir, file_name) for file_name in server_config.keys()]
 
-    # 压缩处理过的文件
-    pack_to_zip(processed_files, args.zip_path)
-
     # 删除多余的文件
     for file_name in os.listdir(output_dir):
         file_path = os.path.join(output_dir, file_name)
         if file_path not in processed_files:
             os.remove(file_path)
             print(f"Deleted {file_path}")
+
+    # 压缩处理过的文件
+    pack_to_zip(processed_files, args.zip_path)
 
 if __name__ == "__main__":
     main()
