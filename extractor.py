@@ -7,7 +7,7 @@ import time
 from multiprocessing import Queue, freeze_support
 from os import path
 
-from lib.compiler import CompileToPython, CSParser, CSParserJp
+from lib.compiler import CompileToPython, CSParser, CSParser_Jp
 from lib.console import ProgressBar, bar_increase, bar_text, notice
 from utils.util import TaskManager
 from xtractor.bundle import BundleExtractor

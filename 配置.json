@@ -1,0 +1,145 @@
+{
+    "DBSchema": {
+        "日服": {
+             "AcademyMessangerExcel.json": [
+                "MessageGroupId",
+                "MessageJP"
+            ],       
+            "CharacterDialogEmojiExcel.json": [
+                "GroupId",
+                "LocalizeJP"
+            ],
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeJP"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeJP"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Jp"
+            ],
+            "LocalizeEtcExcel.json": [
+                "Key",
+                "NameJp",
+                "DescriptionJp"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Jp"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameJp",
+                "DescriptionJp"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameJP",
+                "NicknameJP"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "ScriptKr",
+                "TextJp"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeJP"
+            ]
+        },
+        "国服": {
+            "CharacterDialogEmojiExcel.json": [
+                "GroupId",
+                "LocalizeKR"
+            ],
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeKR"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeKR"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Kr"
+            ],
+            "LocalizeEtcExcel.json": [
+                "Key",
+                "NameKr",
+                "DescriptionKr"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Kr"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameKr",
+                "DescriptionKr"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameKR",
+                "NicknameKR"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "ScriptKr",
+                "TextJp"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeKR"
+            ]
+        },
+        "国际服": {
+            "CharacterDialogEmojiExcel.json": [
+                "GroupId",
+                "LocalizeTW"
+            ],
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeTW"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeTW"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Tw"
+            ],
+            "LocalizeEtcExcel.json": [
+                "Key",
+                "NameTw",
+                "DescriptionTw"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Tw"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameTw",
+                "DescriptionTw"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameTW",
+                "NicknameTW"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "TextTw"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeTW"
+            ]
+        }
+    }
+}

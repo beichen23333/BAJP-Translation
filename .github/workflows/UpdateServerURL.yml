@@ -31,17 +31,17 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          echo "=== 开始更新日服(JP) ==="
+          echo "=== 开始更新日服 ==="
           python -m regions.JP.update_urls ba.env server-info.json
-          echo "日服更新完成，退出代码 $?"
+          echo "日服更新完成"
  
-          echo "=== 开始更新国服(CN) ==="
+          echo "=== 开始更新国服 ==="
           python -m regions.CN.CN_run ba.env server-info.json
-          echo "国服更新完成，退出代码 $?"
+          echo "国服更新完成"
           
-          echo "=== 开始更新国际服(GL) ==="
+          echo "=== 开始更新国际服 ==="
           python -m regions.GL.GL_run ba.env server-info.json
-          echo "国际服更新完成，退出代码 $?"
+          echo "国际服更新完成"
           set -e
 
       - name: 分析变更
@@ -70,20 +70,20 @@ jobs:
           git diff --cached -U0 ba.env
           echo "::endgroup::"
 
-          # 区域前缀映射
+          # 区域前缀映射 —— 判断修改为了=，要不然会tm不识别后缀直接判jp区域
           declare -A region_map=(
-            ["BA_SERVER_URL"]="jp"
-            ["ADDRESSABLE_CATALOG_URL"]="jp"
-            ["BA_VERSION_CODE"]="jp"
-            ["BA_VERSION_NAME"]="jp"
-            ["BA_SERVER_URL_CN"]="cn"
-            ["ADDRESSABLE_CATALOG_URL_CN"]="cn"
-            ["BA_VERSION_CODE_CN"]="cn"
-            ["BA_VERSION_NAME_CN"]="cn"
-            ["BA_SERVER_URL_GL"]="gl"
-            ["ADDRESSABLE_CATALOG_URL_GL"]="gl"
-            ["BA_VERSION_CODE_GL"]="gl"
-            ["BA_VERSION_NAME_GL"]="gl"
+            ["BA_SERVER_URL="]="jp"
+            ["ADDRESSABLE_CATALOG_URL="]="jp"
+            ["BA_VERSION_CODE="]="jp"
+            ["BA_VERSION_NAME="]="jp"
+            ["BA_SERVER_URL_CN="]="cn"
+            ["ADDRESSABLE_CATALOG_URL_CN="]="cn"
+            ["BA_VERSION_CODE_CN="]="cn"
+            ["BA_VERSION_NAME_CN="]="cn"
+            ["BA_SERVER_URL_GL="]="gl"
+            ["ADDRESSABLE_CATALOG_URL_GL="]="gl"
+            ["BA_VERSION_CODE_GL="]="gl"
+            ["BA_VERSION_NAME_GL="]="gl"
           )
 
           detected_regions=()
