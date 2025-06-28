@@ -34,7 +34,7 @@ def clean_json(data, keep_keys):
 
 def main():
     parser = argparse.ArgumentParser(description="Clean JSON files in a directory based on a configuration file.")
-    parser.add_argument('--output_dir', type=str, required=True, help="Directory containing JSON files.")
+    parser.add_argument('--output_dir', type=Path, required=True, help="Directory containing JSON files.")
     parser.add_argument('--server', type=str, required=True, choices=['日服', '国服', '国际服'], help="选择服务器")
     parser.add_argument("--zip_path", type=Path, default="./unpacked/UnpackedExcel.zip", help="Path to save the ZIP archive.")
     args = parser.parse_args()
