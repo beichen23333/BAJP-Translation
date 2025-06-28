@@ -30,21 +30,18 @@ jobs:
       - name: 更新日服URL
         continue-on-error: true
         run: |
-          set -e
           python -m regions.JP.update_urls ba.env server-info.json
           echo "日服更新完成"
  
        - name: 更新国服URL
         continue-on-error: true
         run: |
-          set -e
           timeout 240 python -m regions.CN.CN_run ba.env server-info.json || echo "国服更新超时，跳过"
           echo "国服更新完成"
 
       - name: 更新国际服URL
         continue-on-error: true
         run: |
-          set -e          
           python -m regions.GL.GL_run ba.env server-info.json
           echo "国际服更新完成"
 
