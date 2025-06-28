@@ -1,14 +1,12 @@
 import os
+import sys
 import sqlite3
 import json
+import inspect
 from pathlib import Path
-from setup_utils import dynamic_import_module, convert_to_basic_types, pack_to_zip, deserialize_flatbuffer, clean_json, clean_json_file
+from setup_utils import dynamic_import_module, convert_to_basic_types, pack_to_zip, deserialize_flatbuffer
 
-load_file = Path("配置.json")
-with open(load_file, 'r', encoding='utf-8') as f:
-    load_data = json.load(f)
-
-def unpack_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
+def unpack_json_from_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -50,10 +48,6 @@ def unpack_db(db_path: Path, output_dir: Path, flatbuffers_dir: Path):
                 json.dump(json_data, f, ensure_ascii=False, indent=4)
             print(f"Unpacked {table_name} to {json_path}")
 
-            # 清理JSON文件
-            if table_type in load_data["DBSchema"]["日服"]:
-                clean_json_file(json_path, load_data["DBSchema"]["日服"][table_type])
-
     conn.close()
 
 def main():
@@ -62,11 +56,9 @@ def main():
     parser.add_argument("--db_path", type=Path, required=True, help="Path to the ExcelDB.db file.")
     parser.add_argument("--output_dir", type=Path, default="./unpacked", help="Directory to save the unpacked files.")
     parser.add_argument("--flatbuffers_dir", type=Path, default="./Extracted/FlatData", help="Directory containing FlatBuffers class files.")
-    parser.add_argument("--zip_path", type=Path, default="./unpacked/UnpackedExcel.zip", help="Path to save the ZIP archive.")
     args = parser.parse_args()
-    
-    unpack_db(args.db_path, args.output_dir, args.flatbuffers_dir)
-    pack_to_zip(args.output_dir, args.zip_path)
+
+    unpack_json_from_db(args.db_path, args.output_dir, args.flatbuffers_dir)
 
 if __name__ == "__main__":
     main()

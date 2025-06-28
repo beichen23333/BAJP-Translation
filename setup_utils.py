@@ -73,32 +73,3 @@ def deserialize_flatbuffer(bytes_data: bytes, flatbuffers_dir: Path, table_type:
         except Exception as e:
             print(f"Error reading field {field_name} in {table_type}: {e}")
     return result
-
-def clean_json_file(file_path, keep_keys):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-        
-        cleaned_data = clean_json(json_data, keep_keys)
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(cleaned_data, f, ensure_ascii=False, indent=4)
-        print(f"Cleaned {file_path}")
-    except FileNotFoundError:
-        print(f"File {file_path} not found, skipping.")
-    except json.JSONDecodeError:
-        print(f"File {file_path} is not a valid JSON file, skipping.")
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-
-def clean_json(data, keep_keys):
-    if isinstance(data, dict):
-        cleaned_data = {}
-        for key, value in data.items():
-            if key in keep_keys:
-                cleaned_data[key] = clean_json(value, keep_keys)
-        return cleaned_data
-    elif isinstance(data, list):
-        return [clean_json(item, keep_keys) for item in data]
-    else:
-        return data

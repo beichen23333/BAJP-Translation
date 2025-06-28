@@ -55,17 +55,19 @@ jobs:
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/日服原版DB.zip || echo "日服反序列化..."
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "日服反序列化..."
+          python -m clean_json --output_dir ./unpacked --server 日服 --zip_path ./unpacked/日服原版DB.zip || echo "日服过滤..."
 
       - name: 运行国服反序列化
         if: contains(env.message, 'cn') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "运行国服反序列化..."
-           # 国服加密无解，使用日服FL
+           # 国服存在加密，使用日服FL
            python -m regions.JP.setup_flatdata_jp || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
            python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
-           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "国服反序列化..."
+           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "国服反序列化..."
+           python -m clean_json --output_dir ./unpacked --server 国服 --zip_path ./unpacked/国服原版DB.zip || echo "国服过滤..."
 
       - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
@@ -74,7 +76,8 @@ jobs:
           echo "运行国际服反序列化..."
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国际服原版DB.zip || echo "国际服反序列化..."
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData  || echo "国际服反序列化..."
+          python -m clean_json --output_dir ./unpacked --server 国际服 --zip_path ./unpacked/国际服原版DB.zip || echo "国际服过滤..."
 
       - name: 部署文件
         continue-on-error: true
