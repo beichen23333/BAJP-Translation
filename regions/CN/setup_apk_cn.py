@@ -114,5 +114,5 @@ def download_apk_multithreaded(apk_url: str) -> str:
     
     # 清理临时目录
     os.rmdir(temp_dir)
-    print("[成功] APK文件下载完成")
+    print("APK文件下载完成")
     return apk_path.replace("\\", "/")

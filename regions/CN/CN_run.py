@@ -18,7 +18,7 @@ def main(output_path: Path, json_output_path: Path):
         notice("APK 文件不存在，开始获取下载链接并下载...")
         apk_url = setup_apk_cn.get_apk_url()
         notice(f"APK 链接: {apk_url}")
-        apk_path_downloaded = setup_apk_cn.download_apk(apk_url)
+        apk_path_downloaded = setup_apk_cn.download_apk_multithreaded(apk_url)
         setup_apk_cn.extract_apk_file(apk_path_downloaded)
     else:
         notice("已存在 APK 文件，跳过下载步骤。")
