@@ -1,6 +1,7 @@
 import os
 import json
 import argparse
+from pathlib import Path
 
 def clean_json_file(file_path, keep_keys):
     try:
