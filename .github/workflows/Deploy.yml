@@ -63,7 +63,7 @@ jobs:
         run: |
           echo "运行国服反序列化..."
            # 国服加密无解，使用日服FL
-           python -m regions.Jp.setup_flatdata_jp || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
+           python -m regions.JP.setup_flatdata_jp || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
            python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
            python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --zip_path ./unpacked/国服原版DB.zip || echo "国服反序列化..."
 
