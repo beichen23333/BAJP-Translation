@@ -2,11 +2,19 @@ import json
 import os
 import zipfile
 import shutil
-from setup_utils import read_json, extract_zip
 
 ba_env_path1 = 'ba.env'
 ba_env_path2 = 'BA-Assets-TableBundles/ba.env'
 config_path = '配置.json'
+
+def extract_zip(zip_path, extract_to):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
+
+
+def read_json(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 def read_ba_version(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -57,8 +65,8 @@ def main():
         os.makedirs(extract_to1, exist_ok=True)
         os.makedirs(extract_to2, exist_ok=True)
         
-        extract_zip(f'BA-Assets-TableBundles/日服{version1}.zip', extract_to1)
-        extract_zip(f'BA-Assets-TableBundles/日服{version2}.zip', extract_to2)
+        extract_zip(f'BA-Assets-TableBundles/日服{version2}.zip', extract_to1)
+        extract_zip(f'BA-Assets-TableBundles/日服{version1}.zip', extract_to2)
         
         # 比较json文件
         compare_json_files(extract_to1, extract_to2, db_schema)

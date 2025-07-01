@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
   repository_dispatch:
-    types: [comparison]
+    types: [Comparison]
 
 permissions:
   contents: write
@@ -22,11 +22,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: 克隆仓库
         run: |
