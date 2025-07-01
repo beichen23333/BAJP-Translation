@@ -68,7 +68,8 @@ jobs:
            python -m regions.JP.setup_flatdata_jp || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
            python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
            python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "国服反序列化..."
-           python -m clean_json --output_dir ./unpacked --server 国服 --zip_path ./unpacked/国服原版DB.zip || echo "国服过滤..."
+           BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
+           python -m clean_json --output_dir ./unpacked --server 国服 --zip_path ./unpacked/国服${BA_VERSION_NAME_CN}.zip || echo "国服过滤..."
 
       - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
@@ -78,7 +79,8 @@ jobs:
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData  || echo "国际服反序列化..."
-          python -m clean_json --output_dir ./unpacked --server 国际服 --zip_path ./unpacked/国际服原版DB.zip || echo "国际服过滤..."
+          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
+          python -m clean_json --output_dir ./unpacked --server 国际服 --zip_path ./unpacked/国际服${BA_VERSION_NAME_GL}.zip || echo "国际服过滤..."
 
       - name: 提交变更
         continue-on-error: true
@@ -97,44 +99,26 @@ jobs:
             git commit -m "提交文件"
             git push origin
           fi
-          cd ..
 
-      - name: 克隆BA-Text
+      - name: 运行对比
         if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          REGIONS: ${{ env.message }}
         run: |
-          git clone "$TARGET_REPO_URL"
-
-      - name: 运行过滤
-        if: contains(env.message, 'jp') || env.message == 'all'
-        continue-on-error: true
-        run: |
-          python compare.py
-
-      - name: 提交过滤文件
-        if: contains(env.message, 'jp') || env.message == 'all'
-        continue-on-error: true
-        run: |
-          cp -r ba.env BA-Text/
-          cd BA-Text
-          git add .
-          if git diff-index --quiet HEAD; then
-            echo "无更改，跳过提交文件"
-          else
-            git commit -m "提交文件"
-            git push origin
-          fi
-          cd ..
-
-          cp -r ba.env BA-Assets-TableBundles/
-          cd BA-Assets-TableBundles
-          git add .
-          if git diff-index --quiet HEAD; then
-            echo "无更改，跳过提交文件"
-          else
-            git commit -m "提交文件"
-            git push origin
-          fi
-          cd ..
+          echo "::group::正在为 $REGIONS 触发对比"
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "comparison",
+              "client_payload": {
+                "regions": "'$REGIONS'",
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
+              }
+            }'
+          echo "Curl 退出代码: $?"
+          echo "::endgroup::"
+          echo "对比触发成功"

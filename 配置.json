@@ -1,10 +1,10 @@
 {
     "DBSchema": {
         "日服": {
-             "AcademyMessangerExcel.json": [
+            "AcademyMessangerExcel.json": [
                 "MessageGroupId",
                 "MessageJP"
-            ],       
+            ],
             "CharacterDialogEmojiExcel.json": [
                 "GroupId",
                 "LocalizeJP"
@@ -140,6 +140,48 @@
                 "TalkId",
                 "LocalizeTW"
             ]
+        },
+        "DeepSeek": {
+            "CharacterDialogEmojiExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
+            },
+            "CharacterDialogEventExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
+            },
+            "CharacterDialogExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
+            },
+            "LocalizeErrorExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的文本汉化，需严格保持游戏文本的原始格式。"
+            },
+            "LocalizeEtcExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的物品汉化，需严格保持游戏物品的原始格式。"
+            },
+            "LocalizeExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的技能汉化，需严格保持游戏技能的原始格式。"
+            },
+            "LocalizeSkillExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的技能汉化，需严格保持游戏技能的原始格式。"
+            },
+            "ScenarioCharacterNameExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.如果存在术语表中不存在的名称请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的人物名称汉化，需严格保持游戏人物名称的原始格式。"
+            },
+            "ScenarioScriptExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1. 保持所有[s1]等说话人标记和换行符\n2. [ruby=...]标签内容不翻译，只翻译主文本\n3. 保留「」和所有特殊符号\n4. 使用中文符号……代替...或......\n5. 以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的剧情汉化，需严格保持游戏对话的原始格式。"
+            },
+            "TutorialCharacterDialogExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}\n待翻译内容（保持原格式）：\n",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
+            }
         }
     }
 }

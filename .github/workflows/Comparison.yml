@@ -1,0 +1,94 @@
+name: 对比文件
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: '选择要部署的服务器'
+        required: false
+        default: 'jp'
+        type: string
+
+  repository_dispatch:
+    types: [comparison]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 获取消息
+        id: parse-trigger
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            MESSAGE="${{ github.event.client_payload.regions }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MESSAGE="${{ inputs.region }}"
+          else
+            MESSAGE="all"
+          fi
+          
+          MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
+          echo "message=${MESSAGE}" >> $GITHUB_ENV
+          echo "Detected regions: ${MESSAGE}"
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 克隆BA-Text
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        env:
+          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+        run: |
+          git clone "$TARGET_REPO_URL"
+
+      - name: 运行过滤
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        run: |
+          python compare.py
+
+      - name: 提交过滤文件
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        run: |
+          cp -r ba.env BA-Text/
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
+
+      - name: 提交ba.env
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
+        run: |
+          cp -r ba.env BA-Assets-TableBundles/
+          cd BA-Assets-TableBundles
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
