@@ -49,13 +49,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 克隆BA-Text
-        if: contains(env.message, 'jp') || env.message == 'all'
-        continue-on-error: true
-        env:
-          TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+      - name: 克隆仓库
         run: |
-          git clone "$TARGET_REPO_URL"
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
 
       - name: 运行过滤
         if: contains(env.message, 'jp') || env.message == 'all'
