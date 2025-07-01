@@ -79,7 +79,7 @@ def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, con
                 DEEPSEEK_API_URL,
                 headers=headers,
                 json=payload,
-                timeout=240
+                timeout=300
             )
             
             if response.status_code == 200:
@@ -216,5 +216,5 @@ if __name__ == "__main__":
         terms_path="汉化名词.txt",
         output_dir="BA-Text/汉化后",
         config_path="配置.json",
-        batch_size=50
+        batch_size=100
     )
