@@ -79,16 +79,16 @@ def main():
     processed_files = []
     for file_name, keep_keys in server_config.items():
         file_path = os.path.join(output_dir, file_name)
-        if os.path.exists(file_path):
+        if os.path.exists(file_path) and file_path.endswith('.json'):  # 只处理.json文件
             clean_json_file(file_path, keep_keys)
             processed_files.append(file_path)
         else:
-            print(f"File {file_path} not found, skipping.")
+            print(f"File {file_path} not found or not a JSON file, skipping.")
 
     # 删除多余的文件
     for file_name in os.listdir(output_dir):
         file_path = os.path.join(output_dir, file_name)
-        if file_path not in processed_files and os.path.isfile(file_path):
+        if file_path not in processed_files and os.path.isfile(file_path) and not file_path.endswith('.zip'):  # 排除.zip文件
             os.remove(file_path)
             print(f"Deleted {file_path}")
 
