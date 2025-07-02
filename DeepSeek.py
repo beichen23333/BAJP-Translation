@@ -38,7 +38,7 @@ def read_config(file_path: str) -> Dict[str, List[str]]:
         return {}
 
 def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, content: str, model: str = "deepseek-chat", max_retries: int = 3) -> List[str]:
-    """发送翻译请求并严格保持原始格式
+    """发送翻译请求并保持原始格式
     
     Args:
         texts: 待翻译的文本列表
@@ -195,7 +195,9 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
                             # 按索引写回结果
                             for i, (original, translation) in enumerate(zip(batch_texts, translated)):
                                 idx, key = batch_indices[i]
-                                data[idx][key.replace("Jp", "Cn")] = translation
+                                cn_key = key.replace("Jp", "Cn")
+                                if cn_key not in data[idx]:
+                                    data[idx][cn_key] = translation
                             
                             # 实时保存进度
                             os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -216,5 +218,5 @@ if __name__ == "__main__":
         terms_path="汉化名词.txt",
         output_dir="BA-Text/汉化后",
         config_path="配置.json",
-        batch_size=100
+        batch_size=50
     )
