@@ -199,7 +199,7 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
                                 # 按索引写回结果
                                 for i, (original, translation) in enumerate(zip(batch_texts, translated)):
                                     idx, key = batch_indices[i]
-                                    cn_key = key.replace("Jp", "Cn").replace("jp", "cn")
+                                    cn_key = key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
                                     data[idx][cn_key] = translation
                                 
                                 # 实时保存进度
