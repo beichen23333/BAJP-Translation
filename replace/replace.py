@@ -119,7 +119,7 @@ def main():
     parser.add_argument("--server", type=str, required=True,
                        choices=['国服', '国际服'], 
                        help="Server type to process (国服 or 国际服)")
-    parser.add_argument("--config", type=Path, default="配置.json",
+    parser.add_argument("--config", type=Path, default="config.json",
                        help="Path to the config file")
     args = parser.parse_args()
     
@@ -144,13 +144,13 @@ def main():
         temp_dir_path = Path(temp_dir)
         print(f"\nCreated temporary directory: {temp_dir}")
         
-        # 1. 处理日服ZIP文件
+        # 1. 处理日服ZIP文件（路径改为BA-Text/）
         jp_version_key = 'BA_VERSION_NAME'
         jp_version = versions.get(jp_version_key)
         jp_dir = temp_dir_path / "jp_zip"
         
         if jp_version:
-            jp_zip_path = Path(f"BA-Assets-TableBundles/日服{jp_version}.zip")
+            jp_zip_path = Path("BA-Text") / f"日服{jp_version}.zip"
             if jp_zip_path.exists():
                 os.makedirs(jp_dir, exist_ok=True)
                 if not extract_zip(jp_zip_path, jp_dir):
@@ -162,7 +162,7 @@ def main():
         else:
             print("No Japanese version information found")
             return
-        
+
         # 2. 处理其他服务器ZIP文件
         server_version_key = get_server_version_key(args.server)
         if not server_version_key:
