@@ -57,7 +57,7 @@ def load_config(config_path: Path) -> Dict[str, Any]:
         print(f"Error loading config: {e}")
         return {}
 
-def process_json_files(jp_dir: Path, other_dir: Path, config: Dict[str, Any], server_type: str):
+def process_json_files(jp_dir, other_dir, config, server_type):
     """处理JSON文件，将其他服的文本替换到日服文件中"""
     if 'DBSchema' not in config or server_type not in config['DBSchema']:
         print(f"No schema found for {server_type}")
@@ -70,9 +70,9 @@ def process_json_files(jp_dir: Path, other_dir: Path, config: Dict[str, Any], se
         other_file = other_dir / json_file
         
         if not jp_file.exists() or not other_file.exists():
-            print(f"Skipping {json_file} (not found in both directories)")
+            print(f"Skipping {json_file} (file not found)")
             continue
-        
+            
         try:
             with open(jp_file, 'r', encoding='utf-8') as f:
                 jp_data = json.load(f)
@@ -89,28 +89,47 @@ def process_json_files(jp_dir: Path, other_dir: Path, config: Dict[str, Any], se
         id_key = keys[0]
         text_keys = keys[1:]
         
-        # 创建其他服数据的ID映射
+        # 创建ID映射表（处理数字ID）
         other_id_map = {}
         for item in other_data:
             if id_key in item:
-                other_id_map[item[id_key]] = {k: item.get(k) for k in text_keys}
+                item_id = item[id_key]
+                # 统一转为整数比较（避免字符串"1"和数字1不匹配）
+                other_id_map[int(item_id)] = {k: item.get(k) for k in text_keys}
         
         # 更新日服数据
         updated = 0
         for item in jp_data:
-            if id_key in item and item[id_key] in other_id_map:
-                for k in text_keys:
-                    if k in item and k in other_id_map[item[id_key]]:
-                        item[k] = other_id_map[item[id_key]][k]
-                        updated += 1
+            if id_key in item:
+                try:
+                    item_id = int(item[id_key])
+                    if item_id in other_id_map:
+                        for k in text_keys:
+                            if k in item and k in other_id_map[item_id]:
+                                # 仅当目标文本非None且非空字符串时替换
+                                if other_id_map[item_id][k] not in [None, ""]:
+                                    item[k] = other_id_map[item_id][k]
+                                    updated += 1
+                except (ValueError, TypeError):
+                    continue
         
         # 保存更新后的文件
         try:
             with open(jp_file, 'w', encoding='utf-8') as f:
                 json.dump(jp_data, f, ensure_ascii=False, indent=2)
             print(f"Updated {json_file} with {updated} text replacements")
+            
+            # 调试输出：显示第一个匹配项的替换情况
+            if updated > 0:
+                sample_item = next((x for x in jp_data if id_key in x), None)
+                if sample_item:
+                    print(f"  Sample replacement - ID: {sample_item[id_key]}")
+                    for k in text_keys:
+                        if k in sample_item:
+                            print(f"    {k}: {sample_item[k]}")
         except Exception as e:
             print(f"Error saving {json_file}: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process BA asset bundles.")
