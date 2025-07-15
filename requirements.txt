@@ -6,4 +6,4 @@ UnityPy
 pyaxmlparser
 flatbuffers
 numpy
-opencc-python-reimplemented
+zhconv
