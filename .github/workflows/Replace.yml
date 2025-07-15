@@ -1,0 +1,61 @@
+name: 替换文本
+
+on:
+  workflow_dispatch:
+
+  repository_dispatch:
+    types: [Replace]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
+
+     - name: 国际服
+        run: |
+          python replace/replace.py \
+            --env_file BA-Assets-TableBundles/ba.env \
+            --server 国际服 \
+            --config 配置.json
+          
+      - name: 国服
+        run: |
+          python replace/replace.py \
+            --env_file BA-Assets-TableBundles/ba.env \
+            --server 国服 \
+            --config 配置.json
+          
+      - name: Process and Package Files
+        run: |
+          python replace/revise.py
+
+      - name: 提交过滤文件
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
