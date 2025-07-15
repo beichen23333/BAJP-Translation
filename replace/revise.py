@@ -1,14 +1,18 @@
 import os
 import json
+import shutil
 from pathlib import Path
-from zhconv import convert
 import zipfile
+import tempfile
+from typing import Dict, Any
+import opencc
 
 def convert_traditional_to_simplified(text: str) -> str:
     """将繁体中文转换为简体中文"""
-    return convert(text, 'zh-cn')
+    converter = opencc.OpenCC('t2s')
+    return converter.convert(text)
 
-def load_replacement_rules(replace_file: Path) -> dict:
+def load_replacement_rules(replace_file: Path) -> Dict[str, str]:
     """读取替换名词文件"""
     replacements = {}
     try:
@@ -25,7 +29,7 @@ def load_replacement_rules(replace_file: Path) -> dict:
         print(f"Error loading replacement file: {e}")
         return {}
 
-def process_value(value: str, replacements: dict) -> str:
+def process_value(value: Any, replacements: Dict[str, str]) -> Any:
     """处理单个文本值"""
     if not isinstance(value, str):
         return value
@@ -37,7 +41,7 @@ def process_value(value: str, replacements: dict) -> str:
     
     return simplified
 
-def process_json_file(file_path: Path, replacements: dict):
+def process_json_file(file_path: Path, replacements: Dict[str, str]) -> bool:
     """处理单个JSON文件"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -47,28 +51,18 @@ def process_json_file(file_path: Path, replacements: dict):
         
         if isinstance(data, dict):
             for key, value in data.items():
-                if isinstance(value, str):
-                    new_value = process_value(value, replacements)
-                    if new_value != value:
-                        data[key] = new_value
-                        modified = True
-                elif isinstance(value, list):
-                    for i in range(len(value)):
-                        if isinstance(value[i], str):
-                            new_value = process_value(value[i], replacements)
-                            if new_value != value[i]:
-                                value[i] = new_value
-                                modified = True
-        
+                new_value = process_value(value, replacements)
+                if new_value != value:
+                    data[key] = new_value
+                    modified = True
         elif isinstance(data, list):
             for item in data:
                 if isinstance(item, dict):
                     for key, value in item.items():
-                        if isinstance(value, str):
-                            new_value = process_value(value, replacements)
-                            if new_value != value:
-                                item[key] = new_value
-                                modified = True
+                        new_value = process_value(value, replacements)
+                        if new_value != value:
+                            item[key] = new_value
+                            modified = True
         
         if modified:
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -79,7 +73,7 @@ def process_json_file(file_path: Path, replacements: dict):
         print(f"Error processing {file_path}: {e}")
     return False
 
-def create_zip_from_directory(directory: Path, output_zip: Path):
+def create_zip_from_directory(directory: Path, output_zip: Path) -> bool:
     """将目录中的所有文件压缩为ZIP"""
     try:
         with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -94,9 +88,8 @@ def create_zip_from_directory(directory: Path, output_zip: Path):
         print(f"Error creating ZIP file: {e}")
         return False
 
-def process_all_json_files(input_dir: Path, output_zip: Path, replacements: dict):
+def process_all_json_files(input_dir: Path, output_zip: Path, replacements: Dict[str, str]) -> bool:
     """处理目录中的所有JSON文件并打包为ZIP"""
-    # 创建临时工作目录
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
         
@@ -120,16 +113,13 @@ def process_all_json_files(input_dir: Path, output_zip: Path, replacements: dict
         print(f"Processed {processed_count} JSON files")
         
         # 创建ZIP文件
-        if not create_zip_from_directory(temp_dir_path, output_zip):
-            return False
-        
-    return True
+        return create_zip_from_directory(temp_dir_path, output_zip)
 
 def main():
     # 输入输出配置
-    input_dir = Path("BA-Text/processed")  # 第一个脚本的输出目录
-    replace_file = Path("替换名词.txt")     # 名词替换规则文件
-    output_zip = Path("BA-Text/日服.zip")   # 最终输出的ZIP文件
+    input_dir = Path("BA-Text/processed")
+    replace_file = Path("替换名词.txt")
+    output_zip = Path("BA-Text/日服.zip")
     
     # 确保输出目录存在
     output_zip.parent.mkdir(parents=True, exist_ok=True)
