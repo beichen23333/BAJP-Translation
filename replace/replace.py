@@ -194,7 +194,6 @@ def main():
     if jp_dir.exists():
         shutil.copytree(jp_dir, output_dir, dirs_exist_ok=True)
         print(f"\nProcessed files saved to: {output_dir}")
-    
-    print("Processing completed. 
+
 if __name__ == "__main__":
     main()
