@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from zhconv import convert
 import zipfile
+import tempfile
+
 
 def convert_traditional_to_simplified(text: str) -> str:
     """将繁体中文转换为简体中文"""
