@@ -56,23 +56,38 @@ def replace_jp_with_cn(temp_dir):
                 index[key] = []
             index[key].append(item[cn_field])
 
+        # 为每个ID维护一个计数器，记录已经替换到第几个CN文本
+        counter = {}
+
         # 替换目标文件中的文本，按顺序替换
         for item in target_data:
             key = item.get(key_field)
             if key in index and jp_field in item:
+                # 初始化计数器
+                if key not in counter:
+                    counter[key] = 0
+                
                 # 获取该ID对应的所有CN文本
                 cn_texts = index[key]
-                # 获取该ID对应的所有JP文本（可能是一个列表或单个值）
-                jp_texts = item[jp_field] if isinstance(item[jp_field], list) else [item[jp_field]]
                 
-                # 按顺序替换，确保不会超出范围
-                for i in range(min(len(jp_texts), len(cn_texts))):
-                    if i < len(cn_texts):
+                # 检查是否还有剩余的CN文本可供替换
+                if counter[key] < len(cn_texts):
+                    # 获取当前应该使用的CN文本索引
+                    current_index = counter[key]
+                    
+                    # 获取该ID对应的所有JP文本（可能是一个列表或单个值）
+                    jp_texts = item[jp_field] if isinstance(item[jp_field], list) else [item[jp_field]]
+                    
+                    # 按顺序替换，确保不会超出范围
+                    for i in range(min(len(jp_texts), len(cn_texts) - current_index)):
                         if isinstance(item[jp_field], list):
-                            item[jp_field][i] = cn_texts[i]
+                            item[jp_field][i] = cn_texts[current_index + i]
                         else:
-                            item[jp_field] = cn_texts[i]
+                            item[jp_field] = cn_texts[current_index]
                             break  # 如果是单个值，只替换第一个
+                    
+                    # 更新计数器
+                    counter[key] += len(jp_texts) if isinstance(item[jp_field], list) else 1
 
         save_json(target_file, target_data)
         print(f"[替换] {filename} 完成")
