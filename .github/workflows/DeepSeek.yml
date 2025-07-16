@@ -3,6 +3,9 @@ name: DeepSeek
 on:
   workflow_dispatch:
 
+  repository_dispatch:
+    types: [DeepSeek]
+
 permissions:
   contents: write
 

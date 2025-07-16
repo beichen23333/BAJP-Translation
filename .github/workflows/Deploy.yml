@@ -99,3 +99,22 @@ jobs:
             git commit -m "提交文件"
             git push origin
           fi
+
+      - name: 触发部署
+        run: |
+          echo "::group::正在触发部署"
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "Back",
+              "client_payload": {
+                "regions": "'过滤'",
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
+              }
+            }'
+          echo "Curl 退出代码: $?"
+          echo "::endgroup::"
+          echo "部署触发成功"
