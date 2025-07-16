@@ -2852,3 +2852,11 @@ SPECIAL
 妮娅
 乐团
 乐队
+※请输入中文汉字。\n※可输入1~5个汉字。
+※请输入片假名。\n※可输入3~10个片假名。
+切换账号
+切换账号（北辰汉化组）
+剧情信息
+剧情信息（北辰汉化组）
+着作权人：NEXON Games Co.,Ltd.  运营公司：上海星啸网络科技有限公司 国新出审[2023]364号 ISBN 978-7-498-12113-4 \n出版单位：宁波东海岸电子音像出版社有限公司\n© 2023 NEXON Games Co.,Ltd. & Shanghai Yostar Co., Ltd. All Rights Reserved.
+© NEXON Games Co., Ltd. & Yostar, Inc. All Rights Reserved.\n汉化制作：北辰汉化组全体成员

@@ -28,8 +28,6 @@ def replace_jp_with_cn(temp_dir):
     for filename, keys in schema.items():
         if not keys:
             continue
-        jp_field = keys[-1]  # 获取JP后缀的字段名
-        cn_field = jp_field.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
 
         hanhua_file = os.path.join(hanhua_dir, filename)
         target_file = os.path.join(temp_dir, filename)
@@ -37,7 +35,6 @@ def replace_jp_with_cn(temp_dir):
         if not os.path.exists(hanhua_file):
             print(f"跳过：汉化文件 {filename} 不存在")
             continue
-
         if not os.path.exists(target_file):
             print(f"跳过：目标文件 {filename} 不存在")
             continue
@@ -45,52 +42,57 @@ def replace_jp_with_cn(temp_dir):
         hanhua_data = load_json(hanhua_file)
         target_data = load_json(target_file)
 
-        # 创建索引字典，按ID分组所有对应的CN文本
+        # 主键字段
         key_field = keys[0]
+
+        # 建立多字段的 CN 映射
+        # index = { key_value: { jp_field1: [cn1, cn2, ...], jp_field2: [...], ... } }
         index = {}
         for item in hanhua_data:
-            if key_field not in item or cn_field not in item:
+            k = item.get(key_field)
+            if k is None:
                 continue
-            key = item[key_field]
-            if key not in index:
-                index[key] = []
-            index[key].append(item[cn_field])
+            if k not in index:
+                index[k] = {}
+            for jp_key in keys[1:]:
+                cn_key = jp_key.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
+                if jp_key in item and cn_key in item:
+                    index[k].setdefault(jp_key, []).append(item[cn_key])
 
-        # 为每个ID维护一个计数器，记录已经替换到第几个CN文本
+        # 为每个 (key, jp_field) 维护计数器
         counter = {}
 
-        # 替换目标文件中的文本，按顺序替换
         for item in target_data:
-            key = item.get(key_field)
-            if key in index and jp_field in item:
-                # 初始化计数器
-                if key not in counter:
-                    counter[key] = 0
-                
-                # 获取该ID对应的所有CN文本
-                cn_texts = index[key]
-                
-                # 检查是否还有剩余的CN文本可供替换
-                if counter[key] < len(cn_texts):
-                    # 获取当前应该使用的CN文本索引
-                    current_index = counter[key]
-                    
-                    # 获取该ID对应的所有JP文本（可能是一个列表或单个值）
-                    jp_texts = item[jp_field] if isinstance(item[jp_field], list) else [item[jp_field]]
-                    
-                    # 按顺序替换，确保不会超出范围
-                    for i in range(min(len(jp_texts), len(cn_texts) - current_index)):
-                        if isinstance(item[jp_field], list):
-                            item[jp_field][i] = cn_texts[current_index + i]
-                        else:
-                            item[jp_field] = cn_texts[current_index]
-                            break  # 如果是单个值，只替换第一个
-                    
-                    # 更新计数器
-                    counter[key] += len(jp_texts) if isinstance(item[jp_field], list) else 1
+            k = item.get(key_field)
+            if k is None or k not in index:
+                continue
+
+            for jp_key in keys[1:]:
+                if jp_key not in item:
+                    continue
+
+                # 计数器维度：(key, jp_key)
+                counter_key = (k, jp_key)
+                if counter_key not in counter:
+                    counter[counter_key] = 0
+
+                cn_texts = index[k].get(jp_key, [])
+                if counter[counter_key] >= len(cn_texts):
+                    continue
+
+                jp_texts = item[jp_key] if isinstance(item[jp_key], list) else [item[jp_key]]
+                for i in range(min(len(jp_texts), len(cn_texts) - counter[counter_key])):
+                    cn_idx = counter[counter_key] + i
+                    if isinstance(item[jp_key], list):
+                        item[jp_key][i] = cn_texts[cn_idx]
+                    else:
+                        item[jp_key] = cn_texts[cn_idx]
+                        break
+                counter[counter_key] += len(jp_texts) if isinstance(item[jp_key], list) else 1
 
         save_json(target_file, target_data)
         print(f"[替换] {filename} 完成")
+
 
 def repack_zip(temp_dir):
     # 直接重新打包为zip（覆盖原文件）
