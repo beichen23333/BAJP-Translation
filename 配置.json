@@ -134,6 +134,7 @@
             ],
             "ScenarioScriptExcel.json": [
                 "GroupId",
+                "ScriptKr",
                 "TextTw"
             ],
             "TutorialCharacterDialogExcel.json": [
