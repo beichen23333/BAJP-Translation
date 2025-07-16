@@ -56,19 +56,34 @@ def process_json_files(jp_dir: Path, other_dir: Path, cfg: Dict[str, Any], serve
 
         jp_data = json.loads(jp_file.read_text(encoding='utf-8'))
         other_data = json.loads(other_file.read_text(encoding='utf-8'))
-        other_map = {item.get(id_key): item for item in other_data if id_key in item}
+
+        # 按顺序建立国际服列表（保留重复 & 顺序）
+        other_list = [
+            (item.get(id_key), {k: item.get(k) for k in src_fields})
+            for item in other_data
+            if id_key in item
+        ]
+
+        # 迭代器：每次遇到相同 ID 就顺序取用
+        from collections import defaultdict, deque
+        buckets = defaultdict(deque)
+        for oid, fields in other_list:
+            buckets[oid].append(fields)
 
         updated = 0
         for item in jp_data:
             oid = item.get(id_key)
-            if oid in other_map:
+            if oid in buckets and buckets[oid]:
+                src_fields_map = buckets[oid].popleft()
                 for tgt, src in zip(tgt_fields, src_fields):
-                    if src in other_map[oid] and tgt in item:
-                        item[tgt] = other_map[oid][src]
+                    if src in src_fields_map and tgt in item:
+                        item[tgt] = src_fields_map[src]
                         updated += 1
+
         if updated:
             jp_file.write_text(json.dumps(jp_data, ensure_ascii=False, indent=2), encoding='utf-8')
             print(f"{json_file}: 替换 {updated} 处")
+
 
 
 def repack_zip(src_dir: Path, dst_zip: Path):
