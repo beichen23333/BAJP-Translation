@@ -125,11 +125,9 @@ def convert_traditional_to_simplified(text: str) -> str:
 
 def load_replacement_rules(replace_file: Path) -> dict:
     raw = replace_file.read_text(encoding='utf-8')
-    # 按行分割，但不去掉换行符
     lines = [ln.rstrip('\r\n') for ln in raw.splitlines()]
-    # 过滤空行
     lines = [ln for ln in lines if ln.strip()]
-    # 每两行一组
+    # 保留 \n 作为字符串，不转义
     return {lines[i]: lines[i+1] for i in range(0, len(lines), 2) if i+1 < len(lines)}
 
 def process_value(value: str, replacements: dict) -> str:
