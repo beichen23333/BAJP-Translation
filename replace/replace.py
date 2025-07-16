@@ -32,11 +32,19 @@ def read_ba_versions(env_file_path: Path) -> Dict[str, str]:
 def extract_zip(zip_path: Path, extract_to: str) -> bool:
     """解压ZIP文件到指定目录"""
     try:
+        print(f"正在解压: {zip_path.name} 到 {extract_to}")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            file_list = zip_ref.namelist()
+            print(f"解压文件列表 ({len(file_list)} 个文件):")
+            for file in file_list[:5]:  # 只显示前5个文件作为示例
+                print(f"  - {file}")
+            if len(file_list) > 5:
+                print(f"  ... 和 {len(file_list)-5} 更多文件")
             zip_ref.extractall(extract_to)
+        print(f"解压完成: {zip_path.name}")
         return True
     except Exception as e:
-        print(f"Error extracting {zip_path}: {e}")
+        print(f"解压错误 {zip_path}: {e}")
         return False
 
 def get_server_version_key(server_type: str) -> Optional[str]:
@@ -74,8 +82,10 @@ def process_json_files(jp_dir: Path, other_dir: Path, config: Dict[str, Any], se
         other_file = other_dir / json_file
         
         if not jp_file.exists():
+            print(f"日服文件不存在: {jp_file}")
             continue
         if not other_file.exists():
+            print(f"{server_type}文件不存在: {other_file}")
             continue
 
         try:
@@ -114,9 +124,9 @@ def process_json_files(jp_dir: Path, other_dir: Path, config: Dict[str, Any], se
         try:
             with open(jp_file, 'w', encoding='utf-8') as f:
                 json.dump(jp_data, f, ensure_ascii=False, indent=2)
-            print(f"Updated {json_file} ({updated} replacements)")
+            print(f"更新文件: {json_file} (替换了 {updated} 处文本)")
         except Exception as e:
-            print(f"Error saving {json_file}: {e}")
+            print(f"保存文件错误 {json_file}: {e}")
 
 def main():
     parser = argparse.ArgumentParser(description="Process BA asset bundles.")
@@ -130,16 +140,24 @@ def main():
     args = parser.parse_args()
     
     # 读取版本信息
+    print("\n=== 读取版本信息 ===")
     versions = read_ba_versions(args.env_file)
     if not versions:
-        print("No version information found")
+        print("未找到版本信息")
         return
     
+    print("找到的版本信息:")
+    for key, value in versions.items():
+        print(f"  {key}: {value}")
+    
     # 读取配置文件
+    print("\n=== 读取配置文件 ===")
     config = load_config(args.config)
     if not config:
-        print("No valid config found")
+        print("未找到有效配置文件")
         return
+    
+    print(f"配置文件加载成功，包含 {len(config.get('DBSchema', {}))} 个服务器配置")
     
     # 创建临时目录
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -150,6 +168,7 @@ def main():
         jp_zip_path = Path("BA-Text") / f"日服{jp_version}.zip"
         jp_dir = temp_dir_path / "jp_zip"
         
+        print("\n=== 处理日服资源 ===")
         if not extract_zip(jp_zip_path, jp_dir):
             return
         
@@ -164,19 +183,30 @@ def main():
             
         server_dir = temp_dir_path / f"{args.server}_zip"
         
+        print(f"\n=== 处理{args.server}资源 ===")
         if not extract_zip(server_zip_path, server_dir):
             return
         
         # 处理JSON文件
+        print(f"\n=== 处理JSON文件 ===")
         process_json_files(jp_dir, server_dir, config, args.server)
         
-        # 打包结果
-        output_zip = Path("BA-Text") / "日服.zip"
-        with zipfile.ZipFile(output_zip, 'w') as z:
-            for root, _, files in os.walk(jp_dir):
-                for file in files:
-                    file_path = Path(root) / file
-                    z.write(file_path, file_path.relative_to(jp_dir))
+        # 保存结果到processed目录
+        output_dir = Path("BA-Text") / "processed"
+        output_dir.mkdir(exist_ok=True, parents=True)
+        
+        print(f"\n=== 保存处理结果到 {output_dir} ===")
+        for root, _, files in os.walk(jp_dir):
+            for file in files:
+                src_path = Path(root) / file
+                rel_path = src_path.relative_to(jp_dir)
+                dest_path = output_dir / rel_path
+                
+                dest_path.parent.mkdir(exist_ok=True, parents=True)
+                shutil.copy2(src_path, dest_path)
+                print(f"已保存: {rel_path}")
+        
+        print("\n处理完成！所有文件已保存到 BA-Text/processed 目录")
 
 if __name__ == "__main__":
     main()
