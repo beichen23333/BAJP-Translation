@@ -36,41 +36,39 @@ def load_config(config_path: Path) -> Dict[str, Any]:
 def process_json_files(jp_dir: Path, other_dir: Path, cfg: Dict[str, Any], server: str):
     schema = cfg.get('DBSchema', {}).get(server)
     if not schema:
-        print(f"[调试] {server} 无映射")
+        print(f"[调试] {server} 无 schema")
         return
 
-    for json_file, keys in schema.items():
-        if len(keys) < 2:
-            continue
+    # 反向映射：日服字段 → 来源字段
+    jp_schema = cfg['DBSchema']['日服']
+    field_map = {
+        jp_file: (jp_keys[0], jp_keys[1:], src_keys[1:])
+        for jp_file, jp_keys in jp_schema.items()
+        for src_file, src_keys in schema.items()
+        if jp_file == src_file
+    }
+
+    for json_file, (id_key, tgt_fields, src_fields) in field_map.items():
         jp_file = jp_dir / json_file
         other_file = other_dir / json_file
-
-        # --- 新增调试 ---
-        print(f"[调试] {server} 检查文件 {json_file}：日服={jp_file.exists()} 目标={other_file.exists()}")
-        if not jp_file.exists() or not other_file.exists():
+        if not (jp_file.exists() and other_file.exists()):
             continue
 
         jp_data = json.loads(jp_file.read_text(encoding='utf-8'))
         other_data = json.loads(other_file.read_text(encoding='utf-8'))
-
-        id_key, *text_keys = keys
         other_map = {item.get(id_key): item for item in other_data if id_key in item}
 
         updated = 0
         for item in jp_data:
             oid = item.get(id_key)
             if oid in other_map:
-                for tk in text_keys:
-                    if tk in item and tk in other_map[oid]:
-                        print(f"[调试] {json_file} 命中 ID={oid} 字段={tk}")
-                        item[tk] = other_map[oid][tk]
+                for tgt, src in zip(tgt_fields, src_fields):
+                    if src in other_map[oid] and tgt in item:
+                        item[tgt] = other_map[oid][src]
                         updated += 1
-
         if updated:
             jp_file.write_text(json.dumps(jp_data, ensure_ascii=False, indent=2), encoding='utf-8')
             print(f"{json_file}: 替换 {updated} 处")
-        else:
-            print(f"[调试] {json_file}: 无匹配，跳过")
 
 
 def repack_zip(src_dir: Path, dst_zip: Path):
