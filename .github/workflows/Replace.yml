@@ -33,23 +33,9 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
 
-      - name: 国际服
+      - name: 运行代码
         run: |
-          python replace/replace.py \
-            --env_file BA-Assets-TableBundles/ba.env \
-            --server 国际服 \
-            --config 配置.json
-
-      - name: 国服
-        run: |
-          python replace/replace.py \
-            --env_file BA-Assets-TableBundles/ba.env \
-            --server 国服 \
-            --config 配置.json
-          
-      - name: 替换不相同文本
-        run: |
-          python replace/revise.py
+          python replace/replace.py
 
       - name: 提交过滤文件
         run: |
