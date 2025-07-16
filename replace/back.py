@@ -6,7 +6,6 @@ import tempfile
 
 config_path = '配置.json'
 hanhua_dir = 'BA-Text/汉化后'
-target_dir = 'BA-Text/日服'
 rizip_path = 'BA-Text/日服.zip'
 
 def load_json(path):
@@ -18,9 +17,13 @@ def save_json(path, data):
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-def replace_jp_with_cn():
+def replace_jp_with_cn(temp_dir):
     config = load_json(config_path)
     schema = config.get("DBSchema", {}).get("日服", {})
+
+    # 解压原始zip到临时目录
+    with zipfile.ZipFile(rizip_path, 'r') as zf:
+        zf.extractall(temp_dir)
 
     for filename, keys in schema.items():
         if not keys:
@@ -29,10 +32,14 @@ def replace_jp_with_cn():
         cn_field = jp_field.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
 
         hanhua_file = os.path.join(hanhua_dir, filename)
-        target_file = os.path.join(target_dir, filename)
+        target_file = os.path.join(temp_dir, filename)
 
-        if not os.path.exists(hanhua_file) or not os.path.exists(target_file):
-            print(f"跳过：{filename} 不存在")
+        if not os.path.exists(hanhua_file):
+            print(f"跳过：汉化文件 {filename} 不存在")
+            continue
+
+        if not os.path.exists(target_file):
+            print(f"跳过：目标文件 {filename} 不存在")
             continue
 
         hanhua_data = load_json(hanhua_file)
@@ -70,31 +77,18 @@ def replace_jp_with_cn():
         save_json(target_file, target_data)
         print(f"[替换] {filename} 完成")
 
-def repack_zip():
-    with tempfile.TemporaryDirectory() as tmp:
-        # 1. 解压原始 zip
-        with zipfile.ZipFile(rizip_path, 'r') as zf:
-            zf.extractall(tmp)
-
-        # 2. 用 target_dir 的文件覆盖或添加
-        for root, _, files in os.walk(target_dir):
+def repack_zip(temp_dir):
+    # 直接重新打包为zip（覆盖原文件）
+    with zipfile.ZipFile(rizip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(temp_dir):
             for file in files:
-                src_file = os.path.join(root, file)
-                rel_path = os.path.relpath(src_file, target_dir)
-                dst_file = os.path.join(tmp, rel_path)
-                os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-                shutil.copy2(src_file, dst_file)
+                abs_path = os.path.join(root, file)
+                arc_path = os.path.relpath(abs_path, temp_dir)
+                zf.write(abs_path, arc_path)
 
-        # 3. 重新打包为 zip（直接覆盖原文件）
-        with zipfile.ZipFile(rizip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for root, _, files in os.walk(tmp):
-                for file in files:
-                    abs_path = os.path.join(root, file)
-                    arc_path = os.path.relpath(abs_path, tmp)
-                    zf.write(abs_path, arc_path)
-
-        print(f"已覆盖 {rizip_path}")
+    print(f"已覆盖 {rizip_path}")
 
 if __name__ == "__main__":
-    replace_jp_with_cn()
-    repack_zip()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        replace_jp_with_cn(temp_dir)
+        repack_zip(temp_dir)
