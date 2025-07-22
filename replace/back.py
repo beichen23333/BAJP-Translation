@@ -4,109 +4,138 @@ import re
 import shutil
 import zipfile
 import tempfile
+from pathlib import Path
 
-config_path   = '配置.json'
-hanhua_dir    = 'BA-Text/汉化后'
-rizip_path    = 'BA-Text/日服.zip'
+# 使用Path对象更安全地处理路径
+config_path = Path('配置.json')
+hanhua_dir = Path('BA-Text/汉化后')
+rizip_path = Path('BA-Text/日服.zip')
 
-# ---------- 工具 ----------
 def load_json(path):
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def save_json(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-# ---------- 动态补 CN ----------
-JP_RE = re.compile(r'^(.*?)(([Jj][Pp])|([Kk][Rr])|([Ee][Nn])|([Tt][Ww]))$')
+def debug_print(data, limit=3):
+    """调试用：打印数据结构"""
+    print(f"数据样本（前{limit}项）:")
+    for i, item in enumerate(data[:limit], 1):
+        print(f"{i}. {json.dumps(item, ensure_ascii=False)}")
+    print(f"...共{len(data)}项\n")
 
-def fill_cn_by_jp(data):
-    """
-    就地补全所有以 Jp/JP/jp 结尾的字段对应的 CN 字段。
-    如果 CN 缺失或为空，则复制 JP 的值。
-    KR/EN/TW 完全忽略。
-    """
-    for item in data:
-        for key, val in list(item.items()):
-            m = JP_RE.match(key)
-            if not m or m.group(2).lower() != 'jp':
-                continue   # 只处理 JP
-            prefix = m.group(1)
-            cn_key = prefix + m.group(2).replace('Jp','Cn').replace('JP','CN').replace('jp','cn')
-            if cn_key not in item or item[cn_key] in (None, ""):
-                item[cn_key] = val
-
-# ---------- 主流程 ----------
 def replace_jp_with_cn(temp_dir):
-    cfg    = load_json(config_path)
-    schema = cfg.get("DBSchema", {}).get("日服", {})
+    temp_dir = Path(temp_dir)
+    print(f"\n{'='*40}\n开始处理...")
+    
+    try:
+        cfg = load_json(config_path)
+        schema = cfg.get("DBSchema", {}).get("日服", {})
+        print(f"加载配置成功，找到{len(schema)}个文件配置")
 
-    # 1. 解压
-    with zipfile.ZipFile(rizip_path, 'r') as zf:
-        zf.extractall(temp_dir)
+        # 解压日服zip
+        with zipfile.ZipFile(rizip_path, 'r') as zf:
+            zf.extractall(temp_dir)
+        print(f"解压完成到临时目录: {temp_dir}")
 
-    for filename, keys in schema.items():
-        if not keys:
-            continue
-
-        hanhua_file = os.path.join(hanhua_dir, filename)
-        target_file = os.path.join(temp_dir, filename)
-
-        if not os.path.exists(hanhua_file):
-            print(f"跳过：汉化文件 {filename} 不存在")
-            continue
-        if not os.path.exists(target_file):
-            print(f"跳过：目标文件 {filename} 不存在")
-            continue
-
-        # 2. 读取并补全 CN
-        hanhua_data = load_json(hanhua_file)
-        fill_cn_by_jp(hanhua_data)
-
-        # 3. 建立「同主键 → 文本列表」——使用TextCn或TextJp
-        key_field = keys[0]
-        jp_field  = keys[1]
-        cn_field  = jp_field.replace('JP','CN').replace('Jp','Cn').replace('jp','cn')
-
-        text_map = {}
-        for item in hanhua_data:
-            k = item.get(key_field)
-            if k is None:
+        for filename, keys in schema.items():
+            if not keys:
                 continue
-            # 使用TextCn，如果为空则使用TextJp
-            text = item.get(cn_field, '') or item.get(jp_field, '')
-            text_map.setdefault(k, []).append(text)
 
-        # 4. 顺序替换目标文件中的JP字段
-        target_data = load_json(target_file)
-        counter = {}
-        for item in target_data:
-            k = item.get(key_field)
-            if k is None or k not in text_map:
-                continue
-            idx = counter.setdefault(k, 0)
-            if idx >= len(text_map[k]):
-                continue
-            item[jp_field] = text_map[k][idx]
-            counter[k] += 1
+            hanhua_file = hanhua_dir / filename
+            target_file = temp_dir / filename
 
-        # 5. 写回两份
-        save_json(target_file, target_data)   # temp 目录，供打包
-        save_json(hanhua_file, hanhua_data)   # ★覆盖汉化后目录
-        print(f"[完成] {filename}")
+            print(f"\n处理文件: {filename}")
+            print(f"汉化文件路径: {hanhua_file}")
+            print(f"目标文件路径: {target_file}")
+
+            if not hanhua_file.exists():
+                print(f"⚠️ 跳过：汉化文件不存在")
+                continue
+            if not target_file.exists():
+                print(f"⚠️ 跳过：目标文件不存在")
+                continue
+
+            # 加载数据
+            hanhua_data = load_json(hanhua_file)
+            target_data = load_json(target_file)
+            
+            print("\n汉化文件数据样本:")
+            debug_print(hanhua_data)
+            print("目标文件数据样本:")
+            debug_print(target_data)
+
+            key_field, jp_field = keys[0], keys[1]
+            cn_field = jp_field.replace('JP', 'CN').replace('Jp', 'Cn').replace('jp', 'cn')
+            print(f"\n关键字段: 主键={key_field}, JP字段={jp_field}, CN字段={cn_field}")
+
+            # 构建映射
+            text_map = {}
+            for item in hanhua_data:
+                key = item.get(key_field)
+                if key is None:
+                    continue
+                cn_text = item.get(cn_field, "")
+                jp_text = item.get(jp_field, "")
+                text = cn_text if cn_text else jp_text
+                text_map.setdefault(key, []).append(text)
+                print(f"映射: {key} → '{text}' (CN: '{cn_text}', JP: '{jp_text}')")
+
+            # 执行替换
+            counter = {}
+            changed = 0
+            for item in target_data:
+                key = item.get(key_field)
+                if key not in text_map:
+                    continue
+                
+                idx = counter.get(key, 0)
+                if idx >= len(text_map[key]):
+                    continue
+                
+                original = item.get(jp_field, "")
+                new_text = text_map[key][idx]
+                if original != new_text:
+                    item[jp_field] = new_text
+                    changed += 1
+                    print(f"替换: {key}[{idx}] '{original}' → '{new_text}'")
+                
+                counter[key] = idx + 1
+
+            print(f"\n替换统计: 共{changed}处修改")
+            
+            # 保存文件
+            save_json(target_file, target_data)
+            save_json(hanhua_file, hanhua_data)
+            print(f"✅ 文件处理完成: {filename}")
+
+    except Exception as e:
+        print(f"❌ 发生错误: {str(e)}")
+        raise
 
 def repack_zip(temp_dir):
+    print(f"\n{'='*40}\n重新打包...")
     with zipfile.ZipFile(rizip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, _, files in os.walk(temp_dir):
-            for file in files:
-                abs_path = os.path.join(root, file)
-                arc_path = os.path.relpath(abs_path, temp_dir)
-                zf.write(abs_path, arc_path)
-    print(f"已覆盖 {rizip_path}")
+        for file in Path(temp_dir).rglob('*'):
+            if file.is_file():
+                arcname = file.relative_to(temp_dir)
+                zf.write(file, arcname)
+                print(f"添加: {arcname}")
+    print(f"✅ 已覆盖 {rizip_path}")
 
 if __name__ == "__main__":
+    print("="*40)
+    print("蓝档汉化替换工具")
+    print("="*40)
+    
     with tempfile.TemporaryDirectory() as temp_dir:
-        replace_jp_with_cn(temp_dir)
-        repack_zip(temp_dir)
+        try:
+            replace_jp_with_cn(temp_dir)
+            repack_zip(temp_dir)
+        except Exception as e:
+            print(f"❌ 程序异常: {str(e)}")
+        finally:
+            input("\n按Enter键退出...")
