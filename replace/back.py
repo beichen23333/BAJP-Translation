@@ -42,14 +42,12 @@ def replace_jp_with_cn(temp_dir):
         hanhua_data = load_json(hanhua_file)
         target_data = load_json(target_file)
 
-        key_field = keys[0]          # 主键，如 GroupId
-        jp_field  = keys[1]          # 日文字段，如 TextJp
-        cn_field  = jp_field.replace("JP", "CN") \
-                            .replace("Jp", "Cn") \
-                            .replace("jp", "cn")
+        key_field = keys[0]
+        jp_field  = keys[1]
+        cn_field  = jp_field.replace("JP", "CN") \.replace("Jp", "Cn") \.replace("jp", "cn")
 
         # 2. 建立同主键 → 中文文本列表（按出现顺序）
-        cn_map = {}                  # { key_value : [cn_text, ...] }
+        cn_map = {}
         for item in hanhua_data:
             k = item.get(key_field)
             if k is None:
