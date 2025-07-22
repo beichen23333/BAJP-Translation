@@ -74,6 +74,9 @@ def replace_jp_with_cn(temp_dir):
             # 有 TextCn 就用 TextCn，否则用空串占位，保证顺序不乱
             text_cn = item.get(cn_field) if item.get(cn_field) not in (None, "") else item.get(jp_field, "")
             cn_map.setdefault(k, []).append(text_cn)
+        save_json(target_file, target_data)          # 写回 temp 供打包
+        save_json(hanhua_file, hanhua_data)          # ★覆盖汉化后目录
+        print(f"[替换] {filename} 完成")
 
         # ---------- 4. 按顺序替换（顺序与汉化文件完全一致） ----------
         counter = {}
