@@ -39,13 +39,30 @@ def replace_jp_with_cn(temp_dir):
             print(f"跳过：目标文件 {filename} 不存在")
             continue
 
+        # ------------ 新增：补全缺失的 CN 字段 ------------
+        # 重新加载，避免修改原文件
         hanhua_data = load_json(hanhua_file)
+
+        jp_field = keys[1]
+        cn_field = jp_field.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
+
+        # 同一个文件里可能出现多种 JP 字段，这里只关心当前 keys 指定的
+        for item in hanhua_data:
+            if jp_field not in item:
+                continue
+            # 只有当 CN 不存在或为空时才补
+            if item.get(cn_field) in (None, ""):
+                item[cn_field] = item[jp_field]
+
+        # 保存回汉化文件（可选，也可不保存，视需求而定）
+        save_json(hanhua_file, hanhua_data)
+        # --------------------------------------------------
+
+        # 继续原来的逻辑
+        hanhua_data = load_json(hanhua_file)   # 重新加载，确保拿到补全后的数据
         target_data = load_json(target_file)
 
         key_field = keys[0]
-        jp_field  = keys[1]
-        cn_field = jp_field.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
-
 
         # 2. 建立同主键 → 中文文本列表（按出现顺序）
         cn_map = {}
@@ -53,29 +70,24 @@ def replace_jp_with_cn(temp_dir):
             k = item.get(key_field)
             if k is None:
                 continue
-            # 没有 TextCn 就跳过，不存 None
-            if cn_field not in item or item[cn_field] in (None, ""):
-                continue
+            # 此时 CN 字段一定存在且非空，无需再判断
             cn_map.setdefault(k, []).append(item[cn_field])
 
-        # 3. 按顺序替换
-        counter = {}                 # { key_value : 已使用个数 }
+        # 3. 按顺序替换（与之前完全一致）
+        counter = {}
         for item in target_data:
             k = item.get(key_field)
             if k is None or k not in cn_map:
                 continue
-
-            # 当前主键已用掉几条中文
             used = counter.setdefault(k, 0)
             if used >= len(cn_map[k]):
-                continue             # 中文文本用完了，不再替换
-
-            # 替换
+                continue
             item[jp_field] = cn_map[k][used]
             counter[k] += 1
 
         save_json(target_file, target_data)
         print(f"[替换] {filename} 完成")
+
 
 
 
