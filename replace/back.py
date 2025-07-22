@@ -43,6 +43,19 @@ def get_cn_field(jp_field):
         return jp_field.replace('jp', 'cn')
     return jp_field + 'Cn'  # 默认处理
 
+def ensure_cn_fields(data, jp_fields):
+    """确保所有CN字段存在，若缺失则使用JP字段的值填充"""
+    modified = False
+    for item in data:
+        for jp_field in jp_fields:
+            cn_field = get_cn_field(jp_field)
+            if cn_field not in item or item[cn_field] in (None, ""):
+                jp_value = item.get(jp_field, "")
+                item[cn_field] = jp_value
+                modified = True
+                log(f"自动填充: 创建 {cn_field} = '{jp_value}' (来自 {jp_field})")
+    return modified
+
 def replace_jp_with_cn(temp_dir):
     """主替换逻辑"""
     temp_dir = Path(temp_dir)
@@ -62,6 +75,7 @@ def replace_jp_with_cn(temp_dir):
         processed_files = 0
         replaced_items = 0
         skipped_empty = 0
+        created_cn_fields = 0
 
         for filename, fields in schema.items():
             if not fields or len(fields) < 2:
@@ -88,6 +102,10 @@ def replace_jp_with_cn(temp_dir):
             log(f"\n处理文件: {filename}")
             log(f"关键字段: 主键={key_field}, JP字段={jp_fields}")
 
+            # 确保CN字段存在
+            if ensure_cn_fields(hanhua_data, jp_fields):
+                created_cn_fields += 1
+
             # 构建映射
             text_maps = {field: {} for field in jp_fields}
             for item in hanhua_data:
@@ -100,13 +118,15 @@ def replace_jp_with_cn(temp_dir):
                     jp_text = item.get(jp_field, "")
                     cn_text = item.get(cn_field, "")
                     
-                    # 明确处理空TextCn的情况
-                    if cn_text is None or cn_text == "":
-                        text_maps[jp_field].setdefault(key, []).append(jp_text)
-                        log(f"保留[{jp_field}]: {key} → 使用原JP文本 '{jp_text}' (因CN文本为空)")
-                    else:
-                        text_maps[jp_field].setdefault(key, []).append(cn_text)
-                        log(f"映射[{jp_field}]: {key} → '{cn_text}' (原JP: '{jp_text}')")
+                    # 使用CN文本，如果为空则使用JP文本
+                    text_to_use = cn_text if cn_text else jp_text
+                    text_maps[jp_field].setdefault(key, []).append(text_to_use)
+                    
+                    log_detail = (
+                        f"映射[{jp_field}]: {key} → '{text_to_use}' "
+                        f"(CN: '{cn_text}'{' (自动填充)' if not cn_text else ''}, JP: '{jp_text}')"
+                    )
+                    log(log_detail)
 
             # 执行替换
             file_replaced = 0
@@ -141,6 +161,8 @@ def replace_jp_with_cn(temp_dir):
 
             # 保存文件
             save_json(target_file, target_data)
+            save_json(hanhua_file, hanhua_data)  # 将补充了CN字段的数据写回汉化后目录
+            
             processed_files += 1
             replaced_items += file_replaced
             skipped_empty += file_skipped
@@ -149,7 +171,8 @@ def replace_jp_with_cn(temp_dir):
         log(f"\n处理总结:\n"
             f"总处理文件数: {processed_files}\n"
             f"总替换条目数: {replaced_items}\n"
-            f"跳过条目数: {skipped_empty}")
+            f"跳过条目数: {skipped_empty}\n"
+            f"自动创建CN字段的文件数: {created_cn_fields}")
 
         return processed_files, replaced_items
 
