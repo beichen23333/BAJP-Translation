@@ -14,9 +14,18 @@ def load_patch_map(patch_file: Path) -> dict[str, dict[int, dict]]:
 
     raw = json.loads(patch_file.read_text(encoding='utf-8'))
     patch_map = {}
+
     for filename, rows in raw.items():
-        patch_map[filename] = {row['Key']: row for row in rows}
+        key_map = {}
+        for row in rows:
+            int_fields = [k for k, v in row.items() if isinstance(v, int)]
+            if not int_fields:
+                raise ValueError(f'{filename} 中的条目找不到整数主键：{row}')
+            key = row[int_fields[0]]
+            key_map[key] = row
+        patch_map[filename] = key_map
     return patch_map
+
 
 
 def apply_patch(temp_dir: Path, patch_map: dict[str, dict[int, dict]]):

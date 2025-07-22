@@ -21,7 +21,7 @@ def replace_jp_with_cn(temp_dir):
     config = load_json(config_path)
     schema = config.get("DBSchema", {}).get("日服", {})
 
-    # 解压原始zip到临时目录
+    # 1. 解压
     with zipfile.ZipFile(rizip_path, 'r') as zf:
         zf.extractall(temp_dir)
 
@@ -42,56 +42,42 @@ def replace_jp_with_cn(temp_dir):
         hanhua_data = load_json(hanhua_file)
         target_data = load_json(target_file)
 
-        # 主键字段
-        key_field = keys[0]
+        key_field = keys[0]          # 主键，如 GroupId
+        jp_field  = keys[1]          # 日文字段，如 TextJp
+        cn_field  = jp_field.replace("JP", "CN") \
+                            .replace("Jp", "Cn") \
+                            .replace("jp", "cn")
 
-        # 建立多字段的 CN 映射
-        # index = { key_value: { jp_field1: [cn1, cn2, ...], jp_field2: [...], ... } }
-        index = {}
+        # 2. 建立同主键 → 中文文本列表（按出现顺序）
+        cn_map = {}                  # { key_value : [cn_text, ...] }
         for item in hanhua_data:
             k = item.get(key_field)
             if k is None:
                 continue
-            if k not in index:
-                index[k] = {}
-            for jp_key in keys[1:]:
-                cn_key = jp_key.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
-                if jp_key in item and cn_key in item:
-                    index[k].setdefault(jp_key, []).append(item[cn_key])
+            # 没有 TextCn 就跳过，不存 None
+            if cn_field not in item or item[cn_field] in (None, ""):
+                continue
+            cn_map.setdefault(k, []).append(item[cn_field])
 
-        # 为每个 (key, jp_field) 维护计数器
-        counter = {}
-
+        # 3. 按顺序替换
+        counter = {}                 # { key_value : 已使用个数 }
         for item in target_data:
             k = item.get(key_field)
-            if k is None or k not in index:
+            if k is None or k not in cn_map:
                 continue
 
-            for jp_key in keys[1:]:
-                if jp_key not in item:
-                    continue
+            # 当前主键已用掉几条中文
+            used = counter.setdefault(k, 0)
+            if used >= len(cn_map[k]):
+                continue             # 中文文本用完了，不再替换
 
-                # 计数器维度：(key, jp_key)
-                counter_key = (k, jp_key)
-                if counter_key not in counter:
-                    counter[counter_key] = 0
-
-                cn_texts = index[k].get(jp_key, [])
-                if counter[counter_key] >= len(cn_texts):
-                    continue
-
-                jp_texts = item[jp_key] if isinstance(item[jp_key], list) else [item[jp_key]]
-                for i in range(min(len(jp_texts), len(cn_texts) - counter[counter_key])):
-                    cn_idx = counter[counter_key] + i
-                    if isinstance(item[jp_key], list):
-                        item[jp_key][i] = cn_texts[cn_idx]
-                    else:
-                        item[jp_key] = cn_texts[cn_idx]
-                        break
-                counter[counter_key] += len(jp_texts) if isinstance(item[jp_key], list) else 1
+            # 替换
+            item[jp_field] = cn_map[k][used]
+            counter[k] += 1
 
         save_json(target_file, target_data)
         print(f"[替换] {filename} 完成")
+
 
 
 def repack_zip(temp_dir):
