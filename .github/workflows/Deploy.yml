@@ -101,6 +101,8 @@ jobs:
           fi
 
       - name: 触发部署
+        if: contains(env.message, 'jp') || env.message == 'all'
+        continue-on-error: true
         run: |
           echo "::group::正在触发部署"
           curl -sS -X POST \

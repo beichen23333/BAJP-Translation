@@ -91,7 +91,7 @@ def run_first_stage(tmp_root: Path) -> Path:
     cfg = load_config(cfg_file)
 
     jp_ver = versions["BA_VERSION_NAME"]
-    jp_zip = Path("BA-Text") / f"日服{jp_ver}.zip"
+    jp_zip = Path("BA-Text") / f"日服.zip"
     jp_dir = tmp_root / "jp"
 
     for server in ["国际服", "国服"]:
