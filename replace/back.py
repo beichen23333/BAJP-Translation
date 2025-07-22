@@ -38,7 +38,6 @@ def replace_jp_with_cn(temp_dir):
     cfg    = load_json(config_path)
     schema = cfg.get("DBSchema", {}).get("日服", {})
 
-    # 1. 解压
     with zipfile.ZipFile(rizip_path, 'r') as zf:
         zf.extractall(temp_dir)
 
@@ -49,47 +48,46 @@ def replace_jp_with_cn(temp_dir):
         hanhua_file = os.path.join(hanhua_dir, filename)
         target_file = os.path.join(temp_dir, filename)
 
-        if not os.path.exists(hanhua_file):
-            print(f"跳过：汉化文件 {filename} 不存在")
-            continue
-        if not os.path.exists(target_file):
-            print(f"跳过：目标文件 {filename} 不存在")
+        if not os.path.exists(hanhua_file) or not os.path.exists(target_file):
             continue
 
-        # 2. 读取并补全 CN
-        hanhua_data = load_json(hanhua_file)
-        fill_cn_by_jp(hanhua_data)
+        hanhua = load_json(hanhua_file)
+        target = load_json(target_file)
 
-        # 3. 建立「同主键 → 中文列表」——顺序严格对齐
         key_field = keys[0]
         jp_field  = keys[1]
         cn_field  = jp_field.replace('JP','CN').replace('Jp','Cn').replace('jp','cn')
 
-        cn_map = {}
-        for item in hanhua_data:
-            k = item.get(key_field)
-            if k is None:
-                continue
-            # 一定存在，因为上一步已补全
-            cn_map.setdefault(k, []).append(item.get(cn_field, ''))
+        # 1. 就地补全缺失 CN
+        for it in hanhua:
+            if jp_field in it and (cn_field not in it or it[cn_field] in (None, "")):
+                it[cn_field] = it[jp_field]
 
-        # 4. 顺序替换目标文件
-        target_data = load_json(target_file)
+        # 2. 把汉化文件按 GroupId → 顺序列表（含空串）
+        cn_by_gid = {}
+        for it in hanhua:
+            gid = it.get(key_field)
+            if gid is None:
+                continue
+            cn_by_gid.setdefault(gid, []).append(it.get(cn_field, ''))
+
+        # 3. 按顺序替换目标文件
         counter = {}
-        for item in target_data:
-            k = item.get(key_field)
-            if k is None or k not in cn_map:
+        for it in target:
+            gid = it.get(key_field)
+            if gid is None or gid not in cn_by_gid:
                 continue
-            idx = counter.setdefault(k, 0)
-            if idx >= len(cn_map[k]):
+            idx = counter.setdefault(gid, 0)
+            if idx >= len(cn_by_gid[gid]):
                 continue
-            item[jp_field] = cn_map[k][idx]
-            counter[k] += 1
+            it[jp_field] = cn_by_gid[gid][idx]
+            counter[gid] += 1
 
-        # 5. 写回两份
-        save_json(target_file, target_data)   # temp 目录，供打包
-        save_json(hanhua_file, hanhua_data)   # ★覆盖汉化后目录
+        # 4. 写回
+        save_json(target_file, target)   # temp 目录
+        save_json(hanhua_file, hanhua)   # 覆盖汉化后
         print(f"[完成] {filename}")
+
 
 def repack_zip(temp_dir):
     with zipfile.ZipFile(rizip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
