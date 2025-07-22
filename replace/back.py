@@ -23,6 +23,11 @@ def save_json(path, data):
 JP_RE = re.compile(r'^(.*?)(([Jj][Pp])|([Kk][Rr])|([Ee][Nn])|([Tt][Ww]))$')
 
 def fill_cn_by_jp(data):
+    """
+    就地补全所有以 Jp/JP/jp 结尾的字段对应的 CN 字段。
+    如果 CN 缺失或为空，则复制 JP 的值。
+    KR/EN/TW 完全忽略。
+    """
     for item in data:
         for key, val in list(item.items()):
             m = JP_RE.match(key)
@@ -38,6 +43,7 @@ def replace_jp_with_cn(temp_dir):
     cfg    = load_json(config_path)
     schema = cfg.get("DBSchema", {}).get("日服", {})
 
+    # 1. 解压
     with zipfile.ZipFile(rizip_path, 'r') as zf:
         zf.extractall(temp_dir)
 
@@ -48,46 +54,48 @@ def replace_jp_with_cn(temp_dir):
         hanhua_file = os.path.join(hanhua_dir, filename)
         target_file = os.path.join(temp_dir, filename)
 
-        if not os.path.exists(hanhua_file) or not os.path.exists(target_file):
+        if not os.path.exists(hanhua_file):
+            print(f"跳过：汉化文件 {filename} 不存在")
+            continue
+        if not os.path.exists(target_file):
+            print(f"跳过：目标文件 {filename} 不存在")
             continue
 
-        hanhua = load_json(hanhua_file)
-        target = load_json(target_file)
+        # 2. 读取并补全 CN
+        hanhua_data = load_json(hanhua_file)
+        fill_cn_by_jp(hanhua_data)
 
+        # 3. 建立「同主键 → 文本列表」——使用TextCn或TextJp
         key_field = keys[0]
         jp_field  = keys[1]
         cn_field  = jp_field.replace('JP','CN').replace('Jp','Cn').replace('jp','cn')
 
-        # 1. 就地补全缺失 CN
-        for it in hanhua:
-            if jp_field in it and (cn_field not in it or it[cn_field] in (None, "")):
-                it[cn_field] = it[jp_field]
-
-        # 2. 把汉化文件按 GroupId → 顺序列表（含空串）
-        cn_by_gid = {}
-        for it in hanhua:
-            gid = it.get(key_field)
-            if gid is None:
+        text_map = {}
+        for item in hanhua_data:
+            k = item.get(key_field)
+            if k is None:
                 continue
-            cn_by_gid.setdefault(gid, []).append(it.get(cn_field, ''))
+            # 使用TextCn，如果为空则使用TextJp
+            text = item.get(cn_field, '') or item.get(jp_field, '')
+            text_map.setdefault(k, []).append(text)
 
-        # 3. 按顺序替换目标文件
+        # 4. 顺序替换目标文件中的JP字段
+        target_data = load_json(target_file)
         counter = {}
-        for it in target:
-            gid = it.get(key_field)
-            if gid is None or gid not in cn_by_gid:
+        for item in target_data:
+            k = item.get(key_field)
+            if k is None or k not in text_map:
                 continue
-            idx = counter.setdefault(gid, 0)
-            if idx >= len(cn_by_gid[gid]):
+            idx = counter.setdefault(k, 0)
+            if idx >= len(text_map[k]):
                 continue
-            it[jp_field] = cn_by_gid[gid][idx]
-            counter[gid] += 1
+            item[jp_field] = text_map[k][idx]
+            counter[k] += 1
 
-        # 4. 写回
-        save_json(target_file, target)   # temp 目录
-        save_json(hanhua_file, hanhua)   # 覆盖汉化后
+        # 5. 写回两份
+        save_json(target_file, target_data)   # temp 目录，供打包
+        save_json(hanhua_file, hanhua_data)   # ★覆盖汉化后目录
         print(f"[完成] {filename}")
-
 
 def repack_zip(temp_dir):
     with zipfile.ZipFile(rizip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
