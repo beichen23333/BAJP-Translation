@@ -44,5 +44,22 @@
             "Key": 3680140449,
             "Jp": "切换账号（北辰汉化组）"
         }
+    ],
+    "ScenarioCharacterNameExcel.json": [
+        {
+            "CharacterName": 2297042229,
+            "NameJP": "惠",
+            "NicknameJP": "温泉开发部"
+        },
+        {
+            "CharacterName": 485774340,
+            "NameJP": "霞",
+            "NicknameJP": "温泉开发部"
+        },
+        {
+            "CharacterName": 3945318135,
+            "NameJP": "霞",
+            "NicknameJP": "温泉开发部"
+        }
     ]
 }
