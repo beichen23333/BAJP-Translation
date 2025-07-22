@@ -65,19 +65,17 @@ def replace_jp_with_cn(temp_dir):
         jp_field  = keys[1]
         cn_field  = jp_field.replace("JP", "CN").replace("Jp", "Cn").replace("jp", "cn")
 
-        # 2. 动态补齐缺失的 CN
-        fill_missing_cn(hanhua_data)
-
-        # 3. 建立同主键 → 中文文本列表（按出现顺序）
+        # ---------- 3. 建立同主键 → 中文文本列表（必须一一对应，含空串） ----------
         cn_map = {}
         for item in hanhua_data:
             k = item.get(key_field)
             if k is None:
                 continue
-            # 此时 CN 一定存在且非空（已补齐）
-            cn_map.setdefault(k, []).append(item[cn_field])
+            # 有 TextCn 就用 TextCn，否则用空串占位，保证顺序不乱
+            text_cn = item.get(cn_field) if item.get(cn_field) not in (None, "") else item.get(jp_field, "")
+            cn_map.setdefault(k, []).append(text_cn)
 
-        # 4. 按顺序替换
+        # ---------- 4. 按顺序替换（顺序与汉化文件完全一致） ----------
         counter = {}
         for item in target_data:
             k = item.get(key_field)
@@ -86,11 +84,10 @@ def replace_jp_with_cn(temp_dir):
             used = counter.setdefault(k, 0)
             if used >= len(cn_map[k]):
                 continue
+            # 直接替换，即使 TextJp 是空串也照写
             item[jp_field] = cn_map[k][used]
             counter[k] += 1
 
-        save_json(target_file, target_data)
-        print(f"[替换] {filename} 完成")
 
 def repack_zip(temp_dir):
     # 直接重新打包为 zip（覆盖原文件）
