@@ -61,6 +61,7 @@ def replace_jp_with_cn(temp_dir):
 
         processed_files = 0
         replaced_items = 0
+        skipped_empty = 0
 
         for filename, fields in schema.items():
             if not fields or len(fields) < 2:
@@ -99,12 +100,17 @@ def replace_jp_with_cn(temp_dir):
                     jp_text = item.get(jp_field, "")
                     cn_text = item.get(cn_field, "")
                     
-                    if cn_text:  # 只有CN文本不为空时才替换
+                    # 明确处理空TextCn的情况
+                    if cn_text is None or cn_text == "":
+                        text_maps[jp_field].setdefault(key, []).append(jp_text)
+                        log(f"保留[{jp_field}]: {key} → 使用原JP文本 '{jp_text}' (因CN文本为空)")
+                    else:
                         text_maps[jp_field].setdefault(key, []).append(cn_text)
                         log(f"映射[{jp_field}]: {key} → '{cn_text}' (原JP: '{jp_text}')")
 
             # 执行替换
             file_replaced = 0
+            file_skipped = 0
             counters = {field: {} for field in jp_fields}
             
             for item in target_data:
@@ -120,10 +126,16 @@ def replace_jp_with_cn(temp_dir):
                     if idx >= len(text_maps[jp_field][key]):
                         continue
                     
-                    if item.get(jp_field, "") != text_maps[jp_field][key][idx]:
-                        item[jp_field] = text_maps[jp_field][key][idx]
+                    new_text = text_maps[jp_field][key][idx]
+                    original = item.get(jp_field, "")
+                    
+                    if new_text == original:
+                        file_skipped += 1
+                        log(f"保留[{jp_field}]: {key}[{idx}] 文本相同 '{original}'")
+                    else:
+                        item[jp_field] = new_text
                         file_replaced += 1
-                        log(f"替换[{jp_field}]: {key}[{idx}] '{item[jp_field]}'")
+                        log(f"替换[{jp_field}]: {key}[{idx}] '{original}' → '{new_text}'")
                     
                     counters[jp_field][key] = idx + 1
 
@@ -131,11 +143,13 @@ def replace_jp_with_cn(temp_dir):
             save_json(target_file, target_data)
             processed_files += 1
             replaced_items += file_replaced
-            log(f"处理完成: {filename} (替换了 {file_replaced} 处)")
+            skipped_empty += file_skipped
+            log(f"处理完成: {filename} (替换了 {file_replaced} 处, 跳过 {file_skipped} 处)")
 
         log(f"\n处理总结:\n"
             f"总处理文件数: {processed_files}\n"
-            f"总替换条目数: {replaced_items}")
+            f"总替换条目数: {replaced_items}\n"
+            f"跳过条目数: {skipped_empty}")
 
         return processed_files, replaced_items
 
@@ -163,8 +177,8 @@ def main():
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             processed, replaced = replace_jp_with_cn(temp_dir)
-            if processed == 0 or replaced == 0:
-                log("⚠️ 警告: 没有处理任何文件或替换任何内容")
+            if replaced == 0:
+                log("⚠️ 警告: 没有替换任何内容")
                 exit_code = 1
             repack_zip(temp_dir)
     except Exception as e:
