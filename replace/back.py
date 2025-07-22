@@ -12,7 +12,7 @@ rizip_path = Path('BA-Text/日服.zip')
 
 def log(message):
     """统一的日志记录函数"""
-    print(f"[{os.path.basename(__file__)}] {message}")
+    print(f"[{os.path.basename(__file__)}] {message}", flush=True)
 
 def load_json(path):
     """加载JSON文件，带有错误处理"""
@@ -33,6 +33,16 @@ def save_json(path, data):
         log(f"❌ 保存JSON文件失败: {path}\n错误: {str(e)}")
         raise
 
+def get_cn_field(jp_field):
+    """根据JP字段名生成CN字段名"""
+    if 'JP' in jp_field:
+        return jp_field.replace('JP', 'CN')
+    elif 'Jp' in jp_field:
+        return jp_field.replace('Jp', 'Cn')
+    elif 'jp' in jp_field:
+        return jp_field.replace('jp', 'cn')
+    return jp_field + 'Cn'  # 默认处理
+
 def replace_jp_with_cn(temp_dir):
     """主替换逻辑"""
     temp_dir = Path(temp_dir)
@@ -52,8 +62,8 @@ def replace_jp_with_cn(temp_dir):
         processed_files = 0
         replaced_items = 0
 
-        for filename, keys in schema.items():
-            if not keys or len(keys) < 2:
+        for filename, fields in schema.items():
+            if not fields or len(fields) < 2:
                 log(f"⚠️ 跳过：文件 {filename} 配置不完整")
                 continue
 
@@ -71,45 +81,54 @@ def replace_jp_with_cn(temp_dir):
             hanhua_data = load_json(hanhua_file)
             target_data = load_json(target_file)
             
-            key_field, jp_field = keys[0], keys[1]
-            cn_field = jp_field.replace('JP', 'CN').replace('Jp', 'Cn').replace('jp', 'cn')
+            key_field = fields[0]
+            jp_fields = fields[1:] if len(fields) > 2 else [fields[1]]
+            
+            log(f"\n处理文件: {filename}")
+            log(f"关键字段: 主键={key_field}, JP字段={jp_fields}")
 
             # 构建映射
-            text_map = {}
+            text_maps = {field: {} for field in jp_fields}
             for item in hanhua_data:
                 key = item.get(key_field)
                 if key is None:
                     continue
                 
-                jp_text = item.get(jp_field, "")
-                cn_text = item.get(cn_field, "")
-                text = cn_text if cn_text else jp_text
-                
-                if text:
-                    text_map.setdefault(key, []).append(text)
+                for jp_field in jp_fields:
+                    cn_field = get_cn_field(jp_field)
+                    jp_text = item.get(jp_field, "")
+                    cn_text = item.get(cn_field, "")
+                    
+                    if cn_text:  # 只有CN文本不为空时才替换
+                        text_maps[jp_field].setdefault(key, []).append(cn_text)
+                        log(f"映射[{jp_field}]: {key} → '{cn_text}' (原JP: '{jp_text}')")
 
             # 执行替换
-            counter = {}
             file_replaced = 0
+            counters = {field: {} for field in jp_fields}
+            
             for item in target_data:
                 key = item.get(key_field)
-                if key not in text_map:
+                if key is None:
                     continue
                 
-                idx = counter.get(key, 0)
-                if idx >= len(text_map[key]):
-                    continue
-                
-                if item.get(jp_field, "") != text_map[key][idx]:
-                    item[jp_field] = text_map[key][idx]
-                    file_replaced += 1
-                
-                counter[key] = idx + 1
+                for jp_field in jp_fields:
+                    if key not in text_maps[jp_field]:
+                        continue
+                    
+                    idx = counters[jp_field].get(key, 0)
+                    if idx >= len(text_maps[jp_field][key]):
+                        continue
+                    
+                    if item.get(jp_field, "") != text_maps[jp_field][key][idx]:
+                        item[jp_field] = text_maps[jp_field][key][idx]
+                        file_replaced += 1
+                        log(f"替换[{jp_field}]: {key}[{idx}] '{item[jp_field]}'")
+                    
+                    counters[jp_field][key] = idx + 1
 
             # 保存文件
             save_json(target_file, target_data)
-            save_json(hanhua_file, hanhua_data)
-            
             processed_files += 1
             replaced_items += file_replaced
             log(f"处理完成: {filename} (替换了 {file_replaced} 处)")
