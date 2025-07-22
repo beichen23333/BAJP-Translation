@@ -47,17 +47,25 @@ def download_excel_files(env_file: Path, output_dir: Path):
     with open(table_manifest_path, "r", encoding="utf-8") as f:
         table_manifest_data = json.load(f)
         excel_db_info = table_manifest_data.get("Table", {}).get("ExcelDB.db")
+        excel_zip_info = table_manifest_data.get("Table", {}).get("Excel.zip")
         if not excel_db_info:
             raise KeyError("ExcelDB.db在TableManifest中找不到信息。")
+        if not excel_zip_info:
+            raise KeyError("Excel.zip在TableManifest中找不到信息。")
         crc_value = excel_db_info.get("Crc")
+        crc_value2 = excel_zip_info.get("Crc")
         if not crc_value:
             raise KeyError("ExcelDB.db的CRC值未在TableManifest找到")
+        if not crc_value2:
+            raise KeyError("Excel.zip的CRC值未在TableManifest找到")
         print(f"ExcelDB.db的CRC值: {crc_value}")
+        print(f"Excel.zip的CRC值: {crc_value2}")
 
     # 构造最终的下载链接
     crc_prefix = crc_value[:2]
+    crc_prefix2 = crc_value2[:2]
     excel_db_download_url = f"{ba_server_url}/pool/TableBundles/{crc_prefix}/{crc_value}"
-    excel_zip_download_url = f"{ba_server_url}/pool/TableBundles/{crc_prefix}/{crc_value}"
+    excel_zip_download_url = f"{ba_server_url}/pool/TableBundles/{crc_prefix2}/{crc_value2}"
 
     # 下载 ExcelDB.db 和 Excel.zip 文件
     excel_db_path = output_dir / "ExcelDB.db"
