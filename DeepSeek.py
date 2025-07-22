@@ -221,5 +221,5 @@ if __name__ == "__main__":
         terms_path="汉化名词.txt",
         output_dir="BA-Text/汉化后",
         config_path="配置.json",
-        batch_size=50
+        batch_size=70
     )

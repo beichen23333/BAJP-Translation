@@ -143,6 +143,10 @@
             ]
         },
         "DeepSeek": {
+            "AcademyMessangerExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
+            },
             "CharacterDialogEmojiExcel.json": {
                 "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
                 "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式。"
