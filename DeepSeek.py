@@ -3,7 +3,7 @@ import json
 import requests
 import os
 import time
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 
 # 从环境变量中获取DeepSeek API密钥
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
@@ -113,6 +113,26 @@ def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, con
     print(f"翻译失败，已达最大重试次数。最后一批文本：{texts[:3]}...（共{len(texts)}条）")
     return []  # 返回空列表表示失败
 
+def get_cn_key(jp_key: str) -> str:
+    """根据JP键名生成对应的CN键名"""
+    return jp_key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
+
+def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: List[str], japanese_pattern: str) -> Tuple[List[str], List[Tuple[int, str]]]:
+    """找出需要翻译的文本及其索引"""
+    to_translate = []
+    indices = []
+    
+    for idx, item in enumerate(data):
+        for key in jp_keys:
+            cn_key = get_cn_key(key)
+            text_jp = item.get(key, "")
+            
+            # 只有当JP文本包含日文且没有对应的CN键时才需要翻译
+            if text_jp and re.search(japanese_pattern, text_jp) and cn_key not in item:
+                to_translate.append(text_jp)
+                indices.append((idx, key))
+    
+    return to_translate, indices
 
 def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, output_dir: str, config_path: str, batch_size: int = 20) -> None:
     hiragana = '\u3040-\u309F'
@@ -158,58 +178,46 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
                 with open(file_path, 'r', encoding='utf-8') as f:
                     data: List[Dict[str, Union[str, int]]] = json.load(f)
                 
-                # 按键名顺序处理
-                all_translated = False
-                while not all_translated:
-                    all_translated = True
-                    for key in jp_keys:
-                        to_translate = []
-                        indices = []
+                # 找出所有需要翻译的文本
+                to_translate, indices = find_texts_to_translate(data, jp_keys, japanese_pattern)
+                
+                if not to_translate:
+                    print(f"文件 {file_name} 中未检测到需要翻译的内容")
+                    continue
+                
+                print(f"文件 {file_name} 中发现 {len(to_translate)} 处待翻译内容")
+                
+                # 分批处理
+                for batch_start in range(0, len(to_translate), batch_size):
+                    batch_end = batch_start + batch_size
+                    batch_texts = to_translate[batch_start:batch_end]
+                    batch_indices = indices[batch_start:batch_end]
+                    
+                    print(f"正在翻译第 {batch_start//batch_size+1} 批（{len(batch_texts)} 条）...")
+                    
+                    # 使用从配置文件中读取的prompt和content
+                    translated = translate_with_deepseek(
+                        batch_texts, 
+                        terms, 
+                        prompt, 
+                        content
+                    )
+                    
+                    if translated and len(translated) == len(batch_texts):
+                        # 按索引写回结果
+                        for i, (original, translation) in enumerate(zip(batch_texts, translated)):
+                            idx, key = batch_indices[i]
+                            cn_key = get_cn_key(key)
+                            data[idx][cn_key] = translation
                         
-                        for idx, item in enumerate(data):
-                            text_jp = item.get(key, "")
-                            cn_key = key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
-                            if text_jp and re.search(japanese_pattern, text_jp) and cn_key not in item:
-                                to_translate.append(text_jp)
-                                indices.append((idx, key))
+                        # 实时保存进度
+                        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                        with open(output_path, 'w', encoding='utf-8') as f:
+                            json.dump(data, f, ensure_ascii=False, indent=2)
                         
-                        if not to_translate:
-                            print(f"文件 {file_name} 中未检测到需要翻译的 {key} 内容")
-                            continue
-                        
-                        print(f"文件 {file_name} 中发现 {len(to_translate)} 处待翻译的 {key} 内容")
-                        
-                        # 分批处理
-                        for batch_start in range(0, len(to_translate), batch_size):
-                            batch_end = batch_start + batch_size
-                            batch_texts = to_translate[batch_start:batch_end]
-                            batch_indices = indices[batch_start:batch_end]
-                            
-                            print(f"正在翻译第 {batch_start//batch_size+1} 批（{len(batch_texts)} 条）...")
-                            
-                            # 使用从配置文件中读取的prompt和content
-                            translated = translate_with_deepseek(
-                                batch_texts, 
-                                terms, 
-                                prompt, 
-                                content
-                            )
-                            
-                            if translated and len(translated) == len(batch_texts):
-                                # 按索引写回结果
-                                for i, (original, translation) in enumerate(zip(batch_texts, translated)):
-                                    idx, key = batch_indices[i]
-                                    cn_key = key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
-                                    data[idx][cn_key] = translation
-                                
-                                # 实时保存进度
-                                os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                                with open(output_path, 'w', encoding='utf-8') as f:
-                                    json.dump(data, f, ensure_ascii=False, indent=2)
-                                
-                                print(f"成功保存第 {batch_start//batch_size++1} 批翻译结果到 {output_path}")
-                        else:
-                            print(f"第 {batch_start//batch_size+1} 批翻译失败，已跳过")
+                        print(f"成功保存第 {batch_start//batch_size+1} 批翻译结果到 {output_path}")
+                    else:
+                        print(f"第 {batch_start//batch_size+1} 批翻译失败，已跳过")
                 
     except Exception as e:
         print(f"处理过程中发生严重错误：{str(e)}")
@@ -221,5 +229,5 @@ if __name__ == "__main__":
         terms_path="汉化名词.txt",
         output_dir="BA-Text/汉化后",
         config_path="配置.json",
-        batch_size=70
+        batch_size=50
     )
