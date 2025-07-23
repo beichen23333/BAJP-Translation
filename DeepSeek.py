@@ -62,7 +62,7 @@ def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, con
                 },
                 {
                     "role": "user",
-                    "content": f"{prompt}\n待翻译内容（请保持原格式）：\n=====\n" + "\n=====\n".join(texts)
+                    "content": f"{prompt}\n待翻译内容（请保持原格式，不得超出或缺失，大概50条）：\n=====\n" + "\n=====\n".join(texts)
                 }
             ]
             
