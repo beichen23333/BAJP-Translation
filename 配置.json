@@ -1,6 +1,10 @@
 {
     "DBSchema": {
         "日服": {
+            "CharacterDialogBattlePassExcel.json": [
+                "CostumeUniqueId",
+                "LocalizeJP"
+            ],
             "AcademyMessangerExcel.json": [
                 "MessageGroupId",
                 "MessageJP"
