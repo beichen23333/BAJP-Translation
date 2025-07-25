@@ -52,7 +52,14 @@
             "TutorialCharacterDialogExcel.json": [
                 "TalkId",
                 "LocalizeJP"
-            ]
+            ],
+            "LocalizeGachaShopExcel.json": [
+                "GachaShopId",
+                "TabNameJp",
+                "TitleNameJp",
+                "SubTitleJp",
+                "GachaDescriptionJp"
+            ],
         },
         "国服": {
             "CharacterDialogEmojiExcel.json": [
