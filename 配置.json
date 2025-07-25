@@ -59,7 +59,7 @@
                 "TitleNameJp",
                 "SubTitleJp",
                 "GachaDescriptionJp"
-            ],
+            ]
         },
         "国服": {
             "CharacterDialogEmojiExcel.json": [
