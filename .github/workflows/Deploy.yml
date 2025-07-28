@@ -70,7 +70,6 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 日服 \
             --config_file 配置.json \
-            --zip_path ./unpacked/日服${BA_VERSION_NAME}.zip
           echo "日服处理完成"
 
       - name: 运行国服反序列化
@@ -86,7 +85,6 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 国服 \
             --config_file 配置.json \
-            --zip_path ./unpacked/国服${BA_VERSION_NAME_CN}.zip
           echo "国服处理完成"
 
       - name: 运行国际服反序列化
@@ -102,7 +100,6 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 国际服 \
             --config_file 配置.json \
-            --zip_path ./unpacked/国际服${BA_VERSION_NAME_GL}.zip
           echo "国际服处理完成"
 
       - name: 提交变更
