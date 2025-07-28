@@ -1,0 +1,117 @@
+name: 同步更新
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: '选择要运行的脚本（过滤,同步,替换,修改）'
+        required: false
+        default: 'all'
+        type: string
+  repository_dispatch:
+    types: [Back]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: |
+          pip install -r requirements.txt
+          echo "依赖安装完成"
+
+      - name: 获取消息
+        id: parse-trigger
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            MESSAGE="${{ github.event.client_payload.regions }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MESSAGE="${{ inputs.region }}"
+          else
+            MESSAGE="all"
+          fi
+          
+          MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
+          echo "message=${MESSAGE}" >> $GITHUB_ENV
+          echo "Detected regions: ${MESSAGE}"
+
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+
+      - name: 合并内容到当前目录
+        run: |
+          rsync -a --remove-source-files temp-repo/ ./
+          rm -rf temp-repo
+
+      - name: 运行过滤（写出新的文本）
+        if: contains(env.message, '过滤') || env.message == 'all'
+        run: |
+          python compare.py
+
+      - name: 运行同步（同步国服国际服文本）
+        if: contains(env.message, '同步') || env.message == 'all'
+        run: |
+          python replace/replace.py
+
+      - name: 运行替换（写回汉化后文本）
+        if: contains(env.message, '替换') || env.message == 'all'
+        run: |
+          python replace/back.py
+
+      - name: 运行替换2（对部分文本单独修改）
+        if: contains(env.message, '修改') || env.message == 'all'
+        run: |
+          python replace/replace2.py
+
+      - name: 提交过滤文件
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
+
+      - name: 提交ba.env
+        if: contains(env.message, '过滤') || env.message == 'all'
+        run: |
+          cp -r ba.env BA-Assets-TableBundles/
+          cd BA-Assets-TableBundles
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+
+      - name: 触发部署
+        if: contains(env.message, '过滤') || env.message == 'all'
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{"event_type": "DeepSeek"}'
