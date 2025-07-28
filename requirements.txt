@@ -7,3 +7,4 @@ pyaxmlparser
 flatbuffers
 numpy
 zhconv
+tqdm
