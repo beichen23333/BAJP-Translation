@@ -70,6 +70,7 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 日服 \
             --config_file 配置.json \
+            --env_file ba.env \
           echo "日服处理完成"
 
       - name: 运行国服反序列化
@@ -85,6 +86,7 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 国服 \
             --config_file 配置.json \
+            --env_file ba.env \
           echo "国服处理完成"
 
       - name: 运行国际服反序列化
@@ -100,6 +102,7 @@ jobs:
             --flatbuffers_dir ./Extracted/FlatData \
             --server 国际服 \
             --config_file 配置.json \
+            --env_file ba.env \
           echo "国际服处理完成"
 
       - name: 提交变更
