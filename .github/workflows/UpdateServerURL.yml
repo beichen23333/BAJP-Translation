@@ -68,7 +68,6 @@ jobs:
             exit 0
           fi
 
-          # 改进的行号检测方法
           changed_lines=$(git diff --cached -U0 ba.env | \
                          grep -E '^\+[^\+]' | \
                          cut -d: -f1 | \
@@ -80,7 +79,6 @@ jobs:
           git diff --cached -U0 ba.env
           echo "::endgroup::"
 
-          # 区域前缀映射 —— 判断修改为了=，要不然会tm不识别后缀直接判jp区域
           declare -A region_map=(
             ["BA_SERVER_URL="]="jp"
             ["ADDRESSABLE_CATALOG_URL="]="jp"
@@ -108,7 +106,6 @@ jobs:
             done
           done < <(git diff --cached -U0 ba.env | grep -E '^\+[^\+]')
 
-          # 去重并排序
           unique_regions=($(printf "%s\n" "${detected_regions[@]}" | sort -u))
           
           if [ ${#unique_regions[@]} -eq 0 ]; then
@@ -124,9 +121,10 @@ jobs:
       - name: 提交变更
         if: steps.analyze_changes.outputs.changed == 'true'
         run: |
+          git remote set-url origin https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
           git commit -m "自动更新: ${{ steps.analyze_changes.outputs.regions }}"
           git push origin HEAD
-          echo "提交完成，退出代码 $?"
+          echo "提交完成"
 
       - name: 触发部署
         if: steps.analyze_changes.outputs.changed == 'true'
