@@ -48,9 +48,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 克隆仓库
+      - name: 克隆仓库到临时目录
         run: |
-          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/git .
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+
+      - name: 合并内容到当前目录
+        run: |
+          rsync -a --remove-source-files temp-repo/ ./
+          rm -rf temp-repo
 
       - name: 运行日服反序列化
         if: contains(env.message, 'jp') || env.message == 'all'
