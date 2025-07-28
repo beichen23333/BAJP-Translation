@@ -64,7 +64,8 @@ jobs:
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 日服 --config_file 配置.json --env_file ba.env
+          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 日服 --config_file 配置.json --zip_path ./unpacked/日服${BA_VERSION_NAME}.zip
 
       - name: 运行国服反序列化
         if: contains(env.message, 'cn') || env.message == 'all'
@@ -73,7 +74,8 @@ jobs:
           echo "运行国服反序列化..."
           python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国服 --config_file 配置.json --env_file ba.env 
+          BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国服 --config_file 配置.json --zip_path ./unpacked/国服${BA_VERSION_NAME_CN}.zip
 
       - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
@@ -82,7 +84,8 @@ jobs:
           echo "运行国际服反序列化..."
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国际服 --config_file 配置.json --env_file ba.env
+          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国际服 --config_file 配置.json --zip_path ./unpacked/国际服${BA_VERSION_NAME_GL}.zip
 
       - name: 提交变更
         continue-on-error: true
