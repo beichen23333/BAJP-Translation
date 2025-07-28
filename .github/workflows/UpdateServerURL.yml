@@ -121,7 +121,6 @@ jobs:
       - name: 提交变更
         if: steps.analyze_changes.outputs.changed == 'true'
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
           git commit -m "自动更新: ${{ steps.analyze_changes.outputs.regions }}"
           git push origin HEAD
           echo "提交完成"
