@@ -27,22 +27,26 @@ jobs:
           pip install -r requirements.txt
           echo "依赖安装完成，退出代码 $?"
 
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
+
       - name: 更新日服URL
         continue-on-error: true
         run: |
-          python -m regions.JP.update_urls ba.env server-info.json
+          python -m BA-Chinese-Translation-A.regions.JP.update_urls ba.env server-info.json
           echo "日服更新完成"
  
       - name: 更新国服URL
         continue-on-error: true
         run: |
-          timeout 240 python -m regions.CN.CN_run ba.env server-info.json || echo "国服更新超时，跳过"
+          timeout 240 python -m BA-Chinese-Translation-A.regions.CN.CN_run ba.env server-info.json || echo "国服更新超时，跳过"
           echo "国服更新完成"
 
       - name: 更新国际服URL
         continue-on-error: true
         run: |
-          python -m regions.GL.GL_run ba.env server-info.json
+          python -m BA-Chinese-Translation-A.regions.GL.GL_run ba.env server-info.json
           echo "国际服更新完成"
 
       - name: 分析变更

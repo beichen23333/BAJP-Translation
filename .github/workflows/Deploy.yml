@@ -48,39 +48,57 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
+
       - name: 运行日服反序列化
         if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "运行日服反序列化..."
-          python -m regions.JP.setup_flatdata || echo "生成日服FL..."
-          python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "日服反序列化..."
-          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
-          python -m clean_json --output_dir ./unpacked --server 日服 --zip_path ./unpacked/日服${BA_VERSION_NAME}.zip || echo "日服过滤..."
+          python -m BA-Chinese-Translation-A.regions.JP.setup_flatdata || echo "生成日服FL..."
+          python -m BA-Chinese-Translation-A.regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
+          python -m BA-Chinese-Translation-A.unpack_excel_db \
+            --db_path ./downloads/ExcelDB.db \
+            --output_dir ./unpacked \
+            --flatbuffers_dir ./Extracted/FlatData \
+            --server 日服 \
+            --config_file 配置.json \
+            --zip_path ./unpacked/日服${BA_VERSION_NAME}.zip
+          echo "日服处理完成"
 
       - name: 运行国服反序列化
         if: contains(env.message, 'cn') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "运行国服反序列化..."
-           # 国服存在加密，使用日服FL
-           python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
-           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
-           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData || echo "国服反序列化..."
-           BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
-           python -m clean_json --output_dir ./unpacked --server 国服 --zip_path ./unpacked/国服${BA_VERSION_NAME_CN}.zip || echo "国服过滤..."
+          python -m BA-Chinese-Translation-A.regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
+          python -m BA-Chinese-Translation-A.regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
+          python -m BA-Chinese-Translation-A.unpack_excel_db \
+            --db_path ./downloads/ExcelDB.db \
+            --output_dir ./unpacked \
+            --flatbuffers_dir ./Extracted/FlatData \
+            --server 国服 \
+            --config_file 配置.json \
+            --zip_path ./unpacked/国服${BA_VERSION_NAME_CN}.zip
+          echo "国服处理完成"
 
       - name: 运行国际服反序列化
         if: contains(env.message, 'gl') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "运行国际服反序列化..."
-          python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
-          python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData  || echo "国际服反序列化..."
-          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
-          python -m clean_json --output_dir ./unpacked --server 国际服 --zip_path ./unpacked/国际服${BA_VERSION_NAME_GL}.zip || echo "国际服过滤..."
+          python -m BA-Chinese-Translation-A.regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
+          python -m BA-Chinese-Translation-A.regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
+          python -m BA-Chinese-Translation-A.unpack_excel_db \
+            --db_path ./downloads/ExcelDB.db \
+            --output_dir ./unpacked \
+            --flatbuffers_dir ./Extracted/FlatData \
+            --server 国际服 \
+            --config_file 配置.json \
+            --zip_path ./unpacked/国际服${BA_VERSION_NAME_GL}.zip
+          echo "国际服处理完成"
 
       - name: 提交变更
         continue-on-error: true
