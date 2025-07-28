@@ -31,13 +31,13 @@ jobs:
       - name: 克隆仓库
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
-          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git .
 
       - name: 运行汉化
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
-          python BA-Chinese-Translation/DeepSeek.py
+          python DeepSeek.py
 
       - name: 提交汉化文件
         run: |

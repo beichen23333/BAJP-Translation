@@ -50,16 +50,16 @@ jobs:
 
       - name: 克隆仓库
         run: |
-          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/git .
 
       - name: 运行日服反序列化
         if: contains(env.message, 'jp') || env.message == 'all'
         continue-on-error: true
         run: |
           echo "运行日服反序列化..."
-          python -m BA-Chinese-Translation-A.regions.JP.setup_flatdata || echo "生成日服FL..."
-          python -m BA-Chinese-Translation-A.regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-          python -m BA-Chinese-Translation-A.unpack_excel_db \
+          python -m regions.JP.setup_flatdata || echo "生成日服FL..."
+          python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
+          python -m unpack_excel_db \
             --db_path ./downloads/ExcelDB.db \
             --output_dir ./unpacked \
             --flatbuffers_dir ./Extracted/FlatData \
@@ -73,9 +73,9 @@ jobs:
         continue-on-error: true
         run: |
           echo "运行国服反序列化..."
-          python -m BA-Chinese-Translation-A.regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
-          python -m BA-Chinese-Translation-A.regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
-          python -m BA-Chinese-Translation-A.unpack_excel_db \
+          python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
+          python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
+          python -m unpack_excel_db \
             --db_path ./downloads/ExcelDB.db \
             --output_dir ./unpacked \
             --flatbuffers_dir ./Extracted/FlatData \
@@ -89,9 +89,9 @@ jobs:
         continue-on-error: true
         run: |
           echo "运行国际服反序列化..."
-          python -m BA-Chinese-Translation-A.regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
-          python -m BA-Chinese-Translation-A.regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
-          python -m BA-Chinese-Translation-A.unpack_excel_db \
+          python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
+          python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
+          python -m unpack_excel_db \
             --db_path ./downloads/ExcelDB.db \
             --output_dir ./unpacked \
             --flatbuffers_dir ./Extracted/FlatData \
