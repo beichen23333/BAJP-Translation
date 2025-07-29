@@ -1,0 +1,10 @@
+xxhash
+requests
+cloudscraper
+pycryptodome
+UnityPy
+pyaxmlparser
+flatbuffers
+numpy
+zhconv
+tqdm
