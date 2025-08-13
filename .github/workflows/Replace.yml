@@ -1,12 +1,102 @@
-name: 同步更新
+name: 过滤同步与替换
 
 on:
   workflow_dispatch:
     inputs:
-      region:
-        description: '选择要运行的脚本（过滤,同步,替换,修改）'
+      config_path:
+        description: '配置文件路径'
         required: false
-        default: 'all'
+        default: '配置.json'
+        type: string
+      filter:
+        description: '是否过滤新的文本？'
+        required: false
+        type: boolean
+        default: false
+      ba_env_path1:
+        description: '版本读取路径1（新版本）'
+        required: false
+        default: 'ba.env'
+        type: string
+      ba_env_path2:
+        description: '版本读取路径2（旧版本）'
+        required: false
+        default: 'BA-Assets-TableBundles/ba.env'
+        type: string
+      ba_env_path2:
+        description: '过滤后的文件移动路径'
+        required: false
+        default: 'BA-Text/日服'
+        type: string
+      sync:
+        description: '是否同步国服文本？'
+        required: false
+        type: boolean
+        default: false
+      sync2:
+        description: '是否同步国际服文本？'
+        required: false
+        type: boolean
+        default: false
+      replace:
+        description: '是否写回汉化文本？'
+        required: false
+        type: boolean
+        default: false
+      hanhua_dir:
+        description: '汉化后文本存放路径'
+        required: false
+        default: 'BA-Text/汉化后'
+        type: string
+      rizip_path:
+        description: '文本存放路径读取（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
+        type: string
+      rizip_path2:
+        description: '文本存放路径写回（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
+        type: string
+      modify:
+        description: '是否全局替换预设文本？'
+        required: false
+        type: boolean
+        default: false
+      rules:
+        description: '替换规则路径'
+        required: false
+        default: '替换名词.txt'
+        type: string
+      out_zip:
+        description: '替换读取路径（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
+        type: string
+      out_zip2:
+        description: '替换写出路径（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
+        type: string
+      modify2:
+        description: '是否单独替换预设文本？'
+        required: false
+        type: boolean
+        default: false
+      rules2:
+        description: '替换规则路径'
+        required: false
+        default: '特殊修改.json'
+        type: string
+      out_zip:
+        description: '替换读取路径（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
+        type: string
+      out_zip2:
+        description: '替换写出路径（zip路径）'
+        required: false
+        default: 'BA-Text/日服.zip'
         type: string
   repository_dispatch:
     types: [Back]
@@ -33,21 +123,6 @@ jobs:
           pip install -r requirements.txt
           echo "依赖安装完成"
 
-      - name: 获取消息
-        id: parse-trigger
-        run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            MESSAGE="${{ github.event.client_payload.regions }}"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            MESSAGE="${{ inputs.region }}"
-          else
-            MESSAGE="all"
-          fi
-          
-          MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
-          echo "message=${MESSAGE}" >> $GITHUB_ENV
-          echo "Detected regions: ${MESSAGE}"
-
       - name: 克隆仓库
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
@@ -60,26 +135,27 @@ jobs:
           rm -rf temp-repo
 
       - name: 运行过滤（写出新的文本）
-        if: contains(env.message, '过滤') || env.message == 'all'
+        if: ${{ inputs.filter || github.event_name == 'repository_dispatch' }}
         run: |
           python compare.py
 
       - name: 运行同步（同步国服国际服文本）
-        if: contains(env.message, '同步') || env.message == 'all'
+        if: ${{ inputs.sync }}
         run: |
           python replace/replace.py
 
       - name: 运行替换（写回汉化后文本）
-        if: contains(env.message, '替换') || env.message == 'all'
+        if: ${{ inputs.replace }}
         run: |
           python replace/back.py
 
       - name: 运行替换2（对部分文本单独修改）
-        if: contains(env.message, '修改') || env.message == 'all'
+        if: ${{ inputs.modify }}
         run: |
           python replace/replace2.py
 
       - name: 提交过滤文件
+        if: ${{ inputs.filter || github.event_name == 'repository_dispatch' }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -94,7 +170,7 @@ jobs:
           cd ..
 
       - name: 提交ba.env
-        if: contains(env.message, '过滤') || env.message == 'all'
+        if: ${{ inputs.filter || github.event_name == 'repository_dispatch' }}
         run: |
           cp -r ba.env BA-Assets-TableBundles/
           cd BA-Assets-TableBundles
@@ -107,7 +183,7 @@ jobs:
           fi
 
       - name: 触发部署
-        if: contains(env.message, '过滤') || env.message == 'all'
+        if: ${{ inputs.filter || github.event_name == 'repository_dispatch' }}
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
