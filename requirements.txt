@@ -6,5 +6,4 @@ UnityPy
 pyaxmlparser
 flatbuffers
 numpy
-zhconv
 tqdm
