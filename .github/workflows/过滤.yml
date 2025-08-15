@@ -5,29 +5,29 @@ on:
     inputs:
       env_path1:
         description: '新版本版本号读取路径'
-        required: false
+        required: true
         default: 'ba.env'
         type: string
       env_path2:
         description: '旧版本版本号读取路径'
-        required: false
+        required: true
         default: 'BA-Assets-TableBundles/ba.env'
         type: string
       out_path:
         description: '过滤后的文件写出路径'
-        required: false
+        required: true
         default: 'BA-Text/日服'
         type: string
       new:
         description: '是否提交新的ba.env？'
-        required: false
+        required: true
         type: boolean
-        default: false
+        default: true
       deploy:
         description: '是否部署DeepSeek翻译？'
-        required: false
+        required: true
         type: boolean
-        default: false
+        default: true
   repository_dispatch:
     types: [过滤]
 

@@ -2,7 +2,37 @@ name: DeepSeek
 
 on:
   workflow_dispatch:
-
+    inputs:
+      input_dir:
+        description: '读取文件路径'
+        required: true
+        default: 'BA-Text/日服'
+        type: string
+      terms_path:
+        description: '汉化名称路径'
+        required: true
+        default: '汉化名词.txt'
+        type: string
+      output_dir:
+        description: '输出文件路径'
+        required: true
+        default: 'BA-Text/DeepSeek'
+        type: string
+      config_path:
+        description: '配置文件路径'
+        required: true
+        default: '配置.json'
+        type: string
+      batch_size:
+        description: '单次翻译数量'
+        required: true
+        default: '50'
+        type: string
+      max_workers:
+        description: '线程数量'
+        required: true
+        default: '5'
+        type: string
   repository_dispatch:
     types: [DeepSeek]
 

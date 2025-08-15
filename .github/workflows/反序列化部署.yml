@@ -3,13 +3,38 @@ name: 反序列化部署
 on:
   workflow_dispatch:
     inputs:
-      region:
-        description: '选择要部署的服务器（jp,cn,gl）'
+      JP:
+        description: '是否部署日服？'
         required: false
-        default: 'all'
-        type: string
+        type: boolean
+        default: true
+      CN:
+        description: '是否部署国服？'
+        required: false
+        type: boolean
+        default: false
+      GL:
+        description: '是否部署国际服？'
+        required: false
+        type: boolean
+        default: false
+      DB:
+        description: '是否解密ExcelDB.db？'
+        required: false
+        type: boolean
+        default: true
+      Table:
+        description: '是否解密Excel.zip？'
+        required: false
+        type: boolean
+        default: true
+      Back:
+        description: '是否触发过滤？'
+        required: false
+        type: boolean
+        default: true
   repository_dispatch:
-    types: [run-deployment]
+    types: [反序列化部署]
 
 permissions:
   contents: write
@@ -23,20 +48,27 @@ jobs:
         with:
           submodules: false
 
-      - name: 获取消息
+      - name: 解析参数
         id: parse-trigger
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            MESSAGE="${{ github.event.client_payload.regions }}"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            MESSAGE="${{ inputs.region }}"
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            JP=${{ github.event.client_payload.JP }}
+            CN=${{ github.event.client_payload.CN }}
+            GL=${{ github.event.client_payload.GL }}
+            DB=${{ github.event.client_payload.DB }}
+            Table=${{ github.event.client_payload.Table }}
           else
-            MESSAGE="all"
+            JP=${{ inputs.JP }}
+            CN=${{ inputs.CN }}
+            GL=${{ inputs.GL }}
+            DB=${{ inputs.DB }}
+            Table=${{ inputs.Table }}
           fi
-          
-          MESSAGE=$(echo "$MESSAGE" | tr '[:upper:]' '[:lower:]')
-          echo "message=${MESSAGE}" >> $GITHUB_ENV
-          echo "Detected regions: ${MESSAGE}"
+          echo "JP=${JP}" >> $GITHUB_OUTPUT
+          echo "CN=${CN}" >> $GITHUB_OUTPUT
+          echo "GL=${GL}" >> $GITHUB_OUTPUT
+          echo "DB=${DB}" >> $GITHUB_OUTPUT
+          echo "Table=${Table}" >> $GITHUB_OUTPUT
 
       - name: 设置Python环境
         uses: actions/setup-python@v5
@@ -58,36 +90,71 @@ jobs:
           rm -rf temp-repo
 
       - name: 运行日服反序列化
-        if: contains(env.message, 'jp') || env.message == 'all'
+        if: steps.parse-trigger.outputs.JP == 'true'
         continue-on-error: true
         run: |
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
+
+      - name: 反序列化日服ExcelDB.db
+        if: steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.DB == 'true'
+        continue-on-error: true
+        run: |
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 日服 --config_file 配置.json --zip_path ./日服${BA_VERSION_NAME}.zip
+
+      - name: 反序列化日服Excel.zip
+        if: steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Table == 'true'
+        continue-on-error: true
+        run: |
+          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip
 
+      - name: 获取国服结构（国服存在加密，使用日服文件）
+        if: steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.JP == 'false'
+        continue-on-error: true
+        run: |
+          python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
+
       - name: 运行国服反序列化
-        if: contains(env.message, 'cn') || env.message == 'all'
+        if: steps.parse-trigger.outputs.CN == 'true'
         continue-on-error: true
         run: |
           echo "运行国服反序列化..."
-          python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
-          BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
+
+      - name: 反序列化国服ExcelDB.db
+        if: steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.DB == 'true'
+        continue-on-error: true
+        run: |
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国服 --config_file 配置.json --zip_path ./国服${BA_VERSION_NAME_CN}.zip
+
+      - name: 反序列化国服Excel.zip
+        if: steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.Table == 'true'
+        continue-on-error: true
+        run: |
+          BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip
 
       - name: 运行国际服反序列化
-        if: contains(env.message, 'gl') || env.message == 'all'
+        if: steps.parse-trigger.outputs.GL == 'true'
         continue-on-error: true
         run: |
           echo "运行国际服反序列化..."
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
-          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
+
+      - name: 反序列化国际服ExcelDB.db
+        if: steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.DB == 'true'
+        continue-on-error: true
+        run: |
           python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国际服 --config_file 配置.json --zip_path ./国际服${BA_VERSION_NAME_GL}.zip
+
+      - name: 反序列化Excel.zip
+        if: steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.Table == 'true'
+        continue-on-error: true
+        run: |
+          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip
 
       - name: 提交变更
@@ -109,7 +176,7 @@ jobs:
           fi
 
       - name: 触发部署
-        if: contains(env.message, 'jp') || env.message == 'all'
+        if: steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Back == 'true'
         continue-on-error: true
         run: |
           echo "::group::正在触发部署"
@@ -118,13 +185,11 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/dispatches" \
             -d '{
-              "event_type": "Back",
+              "event_type": "过滤",
               "client_payload": {
-                "regions": "'过滤'",
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"
               }
             }'
-          echo "Curl 退出代码: $?"
           echo "::endgroup::"
           echo "部署触发成功"

@@ -7,30 +7,30 @@ on:
         description: '是否同步国服文本？'
         required: false
         type: boolean
-        default: false
+        default: true
       sync2:
         description: '是否同步国际服文本？'
         required: false
         type: boolean
-        default: false
+        default: true
       config_path:
         description: '配置存放路径'
-        required: false
+        required: true
         default: '配置.json'
         type: string
       env_file:
         description: '版本号存放路径'
-        required: false
+        required: true
         default: 'ba.env'
         type: string
       out_zip:
         description: '文本zip存放路径'
-        required: false
+        required: true
         default: 'BA-Text/日服.zip'
         type: string
       out_zip2:
         description: '文本zip写出路径'
-        required: false
+        required: true
         default: 'BA-Text/日服.zip'
         type: string
 
@@ -71,6 +71,7 @@ jobs:
           rm -rf temp-repo
 
       - name: 运行同步
+        if: ${{ inputs.sync || inputs.sync2 }}
         run: |
           python replace/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --env_file "${{ inputs.env_file }}" --out_zip "${{ inputs.out_zip }}" --out_zip2 "${{ inputs.out_zip2 }}"
 

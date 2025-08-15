@@ -5,22 +5,22 @@ on:
     inputs:
       config_path:
         description: '配置文件路径'
-        required: false
+        required: true
         default: '配置.json'
         type: string
       hanhua_dir:
         description: '汉化后文本存放路径'
-        required: false
+        required: true
         default: 'BA-Text/汉化后'
         type: string
       rizip_path:
         description: '文本存放zip路径'
-        required: false
+        required: true
         default: 'BA-Text/日服.zip'
         type: string
       rizip_path2:
         description: '文本写回zip路径'
-        required: false
+        required: true
         default: 'BA-Text/日服.zip'
         type: string
   repository_dispatch:
