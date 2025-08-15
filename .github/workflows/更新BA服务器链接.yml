@@ -61,7 +61,7 @@ jobs:
 
       - name: 检测变更
         id: diff
-        run: sh .github/scripts/changes.sh ba.env.old ba.env
+        run: bash .github/scripts/changes.sh ba.env.old ba.env
 
       - name: 提交并推送
         if: steps.diff.outputs.changed == 'true'
