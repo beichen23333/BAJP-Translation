@@ -1,0 +1,90 @@
+name: 同步
+
+on:
+  workflow_dispatch:
+    inputs:
+      sync:
+        description: '是否同步国服文本？'
+        required: false
+        type: boolean
+        default: true
+      sync2:
+        description: '是否同步国际服文本？'
+        required: false
+        type: boolean
+        default: true
+      config_path:
+        description: '配置存放路径'
+        required: true
+        default: '配置.json'
+        type: string
+      env_file:
+        description: '版本号存放路径'
+        required: true
+        default: 'ba.env'
+        type: string
+      out_zip:
+        description: '文本zip存放路径'
+        required: true
+        default: 'BA-Text/日服.zip'
+        type: string
+      out_zip2:
+        description: '文本zip写出路径'
+        required: true
+        default: 'BA-Text/日服.zip'
+        type: string
+
+  repository_dispatch:
+    types: [同步]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: |
+          pip install zhconv
+          echo "依赖安装完成"
+
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+
+      - name: 合并内容到当前目录
+        run: |
+          rsync -a --remove-source-files temp-repo/ ./
+          rm -rf temp-repo
+
+      - name: 运行同步
+        if: ${{ inputs.sync || inputs.sync2 }}
+        run: |
+          python replace/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --env_file "${{ inputs.env_file }}" --out_zip "${{ inputs.out_zip }}" --out_zip2 "${{ inputs.out_zip2 }}"
+
+      - name: 提交过滤文件
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..

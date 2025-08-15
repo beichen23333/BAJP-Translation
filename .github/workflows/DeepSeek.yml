@@ -1,0 +1,88 @@
+name: DeepSeek
+
+on:
+  workflow_dispatch:
+    inputs:
+      input_dir:
+        description: '读取文件路径'
+        required: true
+        default: 'BA-Text/日服'
+        type: string
+      terms_path:
+        description: '汉化名称路径'
+        required: true
+        default: '汉化名词.txt'
+        type: string
+      output_dir:
+        description: '输出文件路径'
+        required: true
+        default: 'BA-Text/DeepSeek'
+        type: string
+      config_path:
+        description: '配置文件路径'
+        required: true
+        default: '配置.json'
+        type: string
+      batch_size:
+        description: '单次翻译数量'
+        required: true
+        default: '50'
+        type: string
+      max_workers:
+        description: '线程数量'
+        required: true
+        default: '5'
+        type: string
+  repository_dispatch:
+    types: [DeepSeek]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+
+      - name: 合并内容到当前目录
+        run: |
+          rsync -a --remove-source-files temp-repo/ ./
+          rm -rf temp-repo
+
+      - name: 运行汉化
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python DeepSeek.py
+
+      - name: 提交汉化文件
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
