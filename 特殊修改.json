@@ -1,0 +1,68 @@
+{
+    "LocalizeEtcExcel.json": [
+        {
+            "Key": 2875164134,
+            "NameJp": "3nd ANNIVERSARY",
+            "DescriptionJp": "3周年纪念登入奖励！奖励"
+        }
+    ],
+    "LocalizeExcel.json": [
+        {
+            "Key": 2673619827,
+            "Jp": "© NEXON Games Co., Ltd. & Yostar, Inc. All Rights Reserved."
+        },
+        {
+            "Key": 488716733,
+            "Jp": "※请输入片假名。\n※可输入3~10个片假名。"
+        },
+        {
+            "Key": 3728930963,
+            "Jp": "是否使用[c][007eff]{0}[-][/c]个青辉石并进行招募？\n\n*将先消耗付费青辉石。"
+        },
+        {
+            "Key": 2701998922,
+            "Jp": "要否继续进行{0}次招募？"
+        },
+        {
+            "Key": 628819338,
+            "Jp": "LV{0}"
+        },
+        {
+            "Key": 4175536381,
+            "Jp": "LV{0}"
+        },
+        {
+            "Key": 1532089779,
+            "Jp": "LV{0}"
+        },
+        {
+            "Key": 3953084252,
+            "Jp": "LV{0}"
+        },
+        {
+            "Key": 3094932872,
+            "Jp": "剧情信息（北辰汉化组）"
+        },
+        {
+            "Key": 3680140449,
+            "Jp": "切换账号（北辰汉化组）"
+        }
+    ],
+    "ScenarioCharacterNameExcel.json": [
+        {
+            "CharacterName": 2297042229,
+            "NameJP": "惠",
+            "NicknameJP": "温泉开发部"
+        },
+        {
+            "CharacterName": 485774340,
+            "NameJP": "霞",
+            "NicknameJP": "温泉开发部"
+        },
+        {
+            "CharacterName": 3945318135,
+            "NameJP": "霞",
+            "NicknameJP": "温泉开发部"
+        }
+    ]
+}

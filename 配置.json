@@ -1,0 +1,202 @@
+{
+    "DBSchema": {
+        "日服": {
+            "CharacterDialogBattlePassExcel.json": [
+                "CostumeUniqueId",
+                "LocalizeJP"
+            ],
+            "AcademyMessangerExcel.json": [
+                "MessageGroupId",
+                "MessageJP"
+            ],
+            "CharacterDialogEmojiExcel.json": [
+                "GroupId",
+                "LocalizeJP"
+            ],
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeJP"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeJP"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Jp"
+            ],
+            "LocalizeEtcExcel.json": [
+                "Key",
+                "NameJp",
+                "DescriptionJp"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Jp"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameJp",
+                "DescriptionJp"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameJP",
+                "NicknameJP"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "ScriptKr",
+                "TextJp"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeJP"
+            ],
+            "LocalizeGachaShopExcel.json": [
+                "GachaShopId",
+                "TabNameJp",
+                "TitleNameJp",
+                "SubTitleJp",
+                "GachaDescriptionJp"
+            ]
+        },
+        "国服": {
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeKR"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeKR"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Kr"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Kr"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameKr",
+                "DescriptionKr"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameKR",
+                "NicknameKR"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "ScriptKr",
+                "TextJp"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeKR"
+            ]
+        },
+        "国际服": {
+            "CharacterDialogEmojiExcel.json": [
+                "GroupId",
+                "LocalizeTW"
+            ],
+            "CharacterDialogEventExcel.json": [
+                "EventID",
+                "LocalizeTW"
+            ],
+            "CharacterDialogExcel.json": [
+                "CharacterId",
+                "LocalizeTW"
+            ],
+            "LocalizeErrorExcel.json": [
+                "Key",
+                "Tw"
+            ],
+            "LocalizeEtcExcel.json": [
+                "Key",
+                "NameTw",
+                "DescriptionTw"
+            ],
+            "LocalizeExcel.json": [
+                "Key",
+                "Tw"
+            ],
+            "LocalizeSkillExcel.json": [
+                "Key",
+                "NameTw",
+                "DescriptionTw"
+            ],
+            "ScenarioCharacterNameExcel.json": [
+                "CharacterName",
+                "NameTW",
+                "NicknameTW"
+            ],
+            "ScenarioScriptExcel.json": [
+                "GroupId",
+                "ScriptKr",
+                "TextTw"
+            ],
+            "TutorialCharacterDialogExcel.json": [
+                "TalkId",
+                "LocalizeTW"
+            ]
+        },
+        "DeepSeek": {
+            "CharacterDialogBattlePassExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "AcademyMessangerExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "CharacterDialogEmojiExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "CharacterDialogEventExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "CharacterDialogExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "LocalizeErrorExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的文本汉化，需严格保持游戏文本的原始格式（正常应为50条文本）。"
+            },
+            "LocalizeEtcExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的物品汉化，需严格保持游戏物品的原始格式（正常应为50条文本）。"
+            },
+            "LocalizeExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的技能汉化，需严格保持游戏技能的原始格式（正常应为50条文本）。"
+            },
+            "LocalizeSkillExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的技能汉化，需严格保持游戏技能的原始格式（正常应为50条文本）。"
+            },
+            "ScenarioCharacterNameExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.如果存在术语表中不存在的名称请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的人物名称汉化，需严格保持游戏人物名称的原始格式（正常应为50条文本）。"
+            },
+            "ScenarioScriptExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1. 保持所有[s1]等说话人标记和换行符\n2. [ruby=...]标签内容不翻译，只翻译主文本\n3. 保留「」和所有特殊符号\n4. 使用中文符号……代替...或......\n5. 以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的剧情汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "TutorialCharacterDialogExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            },
+            "LocalizeGachaShopExcel.json": {
+                "prompt": "请严格遵循以下规则翻译：\n1.请直译，不要使用中二台词。\n2.以下术语需准确翻译：\n${name}",
+                "content": "你正在协助进行游戏《蔚蓝档案》的对话汉化，需严格保持游戏对话的原始格式（正常应为50条文本）。"
+            }
+        }
+    }
+}
