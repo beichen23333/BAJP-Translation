@@ -63,8 +63,16 @@ jobs:
         id: diff
         run: bash .github/scripts/changes.sh ba.env.old ba.env
 
+      - name: 调试输出
+        run: |
+          echo "Changed: ${{ steps.diff.outputs.changed }}"
+          echo "Regions: ${{ steps.diff.outputs.regions }}"
+          echo "JP: ${{ steps.diff.outputs.JP }}"
+          echo "CN: ${{ steps.diff.outputs.CN }}"
+          echo "GL: ${{ steps.diff.outputs.GL }}"
+
       - name: 提交并推送
-        if: ${{ steps.diff.outputs.changed == 'true' }}
+        if: steps.diff.outputs.changed == 'true'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
@@ -73,7 +81,7 @@ jobs:
           git push origin HEAD
 
       - name: 触发部署
-        if: ${{ steps.diff.outputs.changed == 'true' && (github.event_name == 'schedule' || github.event.inputs.deploy_deserialize == 'true') }}
+        if: steps.diff.outputs.changed == 'true' && (github.event_name == 'schedule' || github.event.inputs.deploy_deserialize == 'true')
         run: |
           curl -sS -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -82,9 +90,9 @@ jobs:
             -d '{
               "event_type": "反序列化部署",
               "client_payload": {
-                "JP": ${{ steps.diff.outputs.JP }},
-                "CN": ${{ steps.diff.outputs.CN }},
-                "GL": ${{ steps.diff.outputs.GL }},
+                "JP": ${{ fromJson(steps.diff.outputs.JP) }},
+                "CN": ${{ fromJson(steps.diff.outputs.CN) }},
+                "GL": ${{ fromJson(steps.diff.outputs.GL) }},
                 "DB": true,
                 "Table": true,
                 "source": "auto-updater",

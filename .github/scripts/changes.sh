@@ -1,10 +1,11 @@
+#!/bin/bash
 set -euo pipefail
 
 old="$1"
 new="$2"
 
 changed="false"
-regions=""
+declare -A region_map=([jp]=false [cn]=false [gl]=false)
 
 # 只要文件不同就标记为有变化
 if ! cmp -s "$old" "$new"; then
@@ -21,25 +22,24 @@ if ! cmp -s "$old" "$new"; then
   # 根据行号映射区域
   for ln in "${lines[@]}"; do
     case $ln in
-      1|2|3|4) regions="$regions,jp" ;;
-      5|6|7|8) regions="$regions,cn" ;;
-      9|10|11|12) regions="$regions,gl" ;;
+      1|2|3|4) region_map[jp]=true ;;
+      5|6|7|8) region_map[cn]=true ;;
+      9|10|11|12) region_map[gl]=true ;;
     esac
   done
-
-  # 去重并去掉前导逗号
-  regions=$(echo "$regions" | tr ',' '\n' | sort -u | paste -sd ',' - | sed 's/^,//')
 fi
 
+# 构建regions字符串
+regions=""
+for region in "${!region_map[@]}"; do
+  if ${region_map[$region]}; then
+    regions="${regions:+$regions,}$region"
+  fi
+done
+
 # 输出 GitHub Actions 所需的变量
-echo "changed=$changed"
-echo "regions=$regions"
-
-# 生成布尔值供 repository_dispatch 使用
-[[ ",$regions," == *",jp,"* ]] && jp=true || jp=false
-[[ ",$regions," == *",cn,"* ]] && cn=true || cn=false
-[[ ",$regions," == *",gl,"* ]] && gl=true || gl=false
-
-echo "JP=$jp"
-echo "CN=$cn"
-echo "GL=$gl"
+echo "changed=$changed" >> $GITHUB_OUTPUT
+echo "regions=${regions:-none}" >> $GITHUB_OUTPUT
+echo "JP=${region_map[jp]}" >> $GITHUB_OUTPUT
+echo "CN=${region_map[cn]}" >> $GITHUB_OUTPUT
+echo "GL=${region_map[gl]}" >> $GITHUB_OUTPUT
