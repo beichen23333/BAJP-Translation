@@ -135,8 +135,6 @@ jobs:
         run: |
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
-          mkdir -p ./Extracted/日服/FlatData
-          mv ./Extracted/FlatBuffers/* ./Extracted/日服/FlatData/ || echo "移动日服FlatData..."
 
       - name: 日服下载
         if: ${{steps.parse-trigger.outputs.JP == 'true'}}
@@ -176,8 +174,6 @@ jobs:
         run: |
           echo "运行国际服反序列化..."
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
-          mkdir -p ./Extracted/国际服/FlatData
-          mv ./Extracted/FlatBuffers/* ./Extracted/国际服/FlatData/ || echo "移动国际服FlatData..."
 
       - name: 国际服下载
         if: ${{steps.parse-trigger.outputs.GL == 'true'}}
