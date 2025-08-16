@@ -90,6 +90,9 @@ jobs:
                 "GL": ${{ fromJson(steps.diff.outputs.GL) }},
                 "DB": true,
                 "Table": true,
+                "Back": true,
+                "CommitFlatData": false,
+                "UsePresetFlatData": false,
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"
               }

@@ -118,102 +118,128 @@ jobs:
         run: |
           if [[ "${{steps.parse-trigger.outputs.UsePresetFlatData}}" == "true" ]]; then
             echo "使用预设FlatData..."
-            echo "flatbuffers_dir=./flatdata-repo" >> $GITHUB_OUTPUT
+            echo "jp_flatbuffers_dir=./flatdata-repo/日服/FlatData" >> $GITHUB_OUTPUT
+            echo "cn_flatbuffers_dir=./flatdata-repo/日服/FlatData" >> $GITHUB_OUTPUT
+            echo "gl_flatbuffers_dir=./flatdata-repo/国际服/FlatData" >> $GITHUB_OUTPUT
             echo "should_commit_flatdata=false" >> $GITHUB_OUTPUT
           else
             echo "使用本地生成的FlatData..."
-            echo "flatbuffers_dir=./Extracted/FlatData" >> $GITHUB_OUTPUT
+            echo "jp_flatbuffers_dir=./Extracted/日服/FlatData" >> $GITHUB_OUTPUT
+            echo "cn_flatbuffers_dir=./Extracted/日服/FlatData" >> $GITHUB_OUTPUT
+            echo "gl_flatbuffers_dir=./Extracted/国际服/FlatData" >> $GITHUB_OUTPUT
             echo "should_commit_flatdata=${{steps.parse-trigger.outputs.CommitFlatData}}" >> $GITHUB_OUTPUT
           fi
 
-      - name: 运行日服反序列化
-        if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.UsePresetFlatData == 'false'}}
-        continue-on-error: true
+      - name: 获取日服FlatData（国服加密，使用日服FlatData）
+        if: ${{(steps.parse-trigger.outputs.JP == 'true' || steps.parse-trigger.outputs.CN == 'true') && steps.parse-trigger.outputs.UsePresetFlatData == 'false'}}
         run: |
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
+          mkdir -p ./Extracted/日服/FlatData
+          mv ./Extracted/FlatBuffers/* ./Extracted/日服/FlatData/ || echo "移动日服FlatData..."
+
+      - name: 日服下载
+        if: ${{steps.parse-trigger.outputs.JP == 'true'}}
+        run: |
           python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
 
       - name: 反序列化日服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
-        continue-on-error: true
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_path ./日服${BA_VERSION_NAME}.zip
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.jp_flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_path ./日服${BA_VERSION_NAME}.zip
 
       - name: 反序列化日服Excel.zip
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
-        continue-on-error: true
         run: |
           BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.jp_flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip
 
-      - name: 获取国服结构（国服存在加密，使用日服文件）
-        if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.JP == 'false'}}
-        continue-on-error: true
-        run: |
-          python -m regions.JP.setup_flatdata || echo "国服存在加密，无法生成dump.cs，生成日服FL..."
-
-      - name: 运行国服反序列化
+      - name: 国服下载
         if: ${{steps.parse-trigger.outputs.CN == 'true'}}
-        continue-on-error: true
         run: |
           echo "运行国服反序列化..."
           python -m regions.CN.download_files_cn --env_file ./ba.env --output_dir ./downloads || echo "国服文件下载..."
 
       - name: 反序列化国服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
-        continue-on-error: true
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_path ./国服${BA_VERSION_NAME_CN}.zip
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.cn_flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_path ./国服${BA_VERSION_NAME_CN}.zip
 
       - name: 反序列化国服Excel.zip
         if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
-        continue-on-error: true
         run: |
           BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.cn_flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip
 
-      - name: 运行国际服反序列化
+      - name: 获取国际服FlatData
         if: ${{steps.parse-trigger.outputs.GL == 'true'}}
-        continue-on-error: true
         run: |
           echo "运行国际服反序列化..."
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
+          mkdir -p ./Extracted/国际服/FlatData
+          mv ./Extracted/FlatBuffers/* ./Extracted/国际服/FlatData/ || echo "移动国际服FlatData..."
+
+      - name: 国际服下载
+        if: ${{steps.parse-trigger.outputs.GL == 'true'}}
+        run: |
           python -m regions.GL.download_files_gl --env_file ./ba.env --output_dir ./downloads || echo "国际服文件下载..."
 
       - name: 反序列化国际服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
-        continue-on-error: true
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_path ./国际服${BA_VERSION_NAME_GL}.zip
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.gl_flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_path ./国际服${BA_VERSION_NAME_GL}.zip
 
-      - name: 反序列化Excel.zip
+      - name: 反序列化国际服Excel.zip
         if: ${{steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
-        continue-on-error: true
         run: |
           BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.gl_flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip
 
       - name: 提交FlatData到仓库
         if: ${{steps.flatdata.outputs.should_commit_flatdata == 'true' && steps.parse-trigger.outputs.UsePresetFlatData == 'false'}}
-        continue-on-error: true
         run: |
           echo "提交FlatData变更..."
           cd flatdata-repo
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-          cp -r ../Extracted/FlatData/* .
+          
+          # 清空仓库根目录的所有内容（除了.git目录和不需要更新的服务器目录）
+          if [[ "${{steps.parse-trigger.outputs.JP}}" == "true" || "${{steps.parse-trigger.outputs.CN}}" == "true" ]]; then
+            # 如果要更新日服/国服，保留国际服目录
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '国际服' -exec rm -rf {} +
+          elif [[ "${{steps.parse-trigger.outputs.GL}}" == "true" ]]; then
+            # 如果要更新国际服，保留日服目录
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '日服' -exec rm -rf {} +
+          else
+            # 默认情况清空所有（除了.git）
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          fi
+          
+          # 处理日服FlatData
+          if [[ "${{steps.parse-trigger.outputs.JP}}" == "true" || "${{steps.parse-trigger.outputs.CN}}" == "true" ]]; then
+            echo "更新日服FlatData..."
+            mkdir -p 日服
+            rm -rf 日服/*
+            cp -r ../Extracted/日服/FlatData/* 日服/
+          fi
+          
+          # 处理国际服FlatData
+          if [[ "${{steps.parse-trigger.outputs.GL}}" == "true" ]]; then
+            echo "更新国际服FlatData..."
+            mkdir -p 国际服
+            rm -rf 国际服/*
+            cp -r ../Extracted/国际服/FlatData/* 国际服/
+          fi
+
           git add .
           if git diff-index --quiet HEAD; then
             echo "无更改，跳过提交FlatData"
           else
-            git commit -m "更新FlatData: $(date +'%Y-%m-%d %H:%M:%S')"
+            git commit -m "更新FlatData: $([ "${{steps.parse-trigger.outputs.JP}}" == "true" ] && echo "日服 ") $([ "${{steps.parse-trigger.outputs.CN}}" == "true" ] && echo "国服 ") $([ "${{steps.parse-trigger.outputs.GL}}" == "true" ] && echo "国际服") - $(date +'%Y-%m-%d %H:%M:%S')"
             git push origin
           fi
 
       - name: 提交变更
-        continue-on-error: true
         env:
           TARGET_REPO_URL: https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
         run: |
@@ -232,7 +258,6 @@ jobs:
 
       - name: 触发部署
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Back == 'true'}}
-        continue-on-error: true
         run: |
           echo "::group::正在触发部署"
           curl -sS -X POST \
