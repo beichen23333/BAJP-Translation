@@ -1,0 +1,76 @@
+name: 全局替换
+
+on:
+  workflow_dispatch:
+    inputs:
+      rules:
+        description: '替换规则路径'
+        required: true
+        default: '替换名词.txt'
+        type: string
+      out_zip:
+        description: '替换zip路径'
+        required: true
+        default: 'BA-Text/日服.zip'
+        type: string
+      out_zip2:
+        description: '写出zip路径'
+        required: true
+        default: 'BA-Text/日服.zip'
+        type: string
+  repository_dispatch:
+    types: [全局替换]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 克隆仓库
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git temp-ba-text
+
+      - name: 移动指定文件到当前目录
+        run: |
+          mv temp-ba-text/替换名词.txt ./
+          mv temp-ba-text/汉化名词.txt ./
+          mv temp-ba-text/特殊修改.json ./
+          mv temp-ba-text/配置.json ./
+          rm -rf temp-ba-text
+
+      - name: 合并内容到当前目录
+        run: |
+          rsync -a --remove-source-files temp-repo/ ./
+          rm -rf temp-repo
+
+      - name: 运行全局替换
+        run: |
+          python tool/replace_globally.py --rules "${{ inputs.rules }}" --out_zip "${{ inputs.out_zip }}" --out_zip2 "${{ inputs.out_zip2 }}"
+
+      - name: 提交文件
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "无更改，跳过提交文件"
+          else
+            git commit -m "提交文件"
+            git push origin
+          fi
+          cd ..
