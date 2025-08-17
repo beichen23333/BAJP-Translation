@@ -64,6 +64,15 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git temp-ba-text
+
+      - name: 移动指定文件到当前目录
+        run: |
+          mv temp-ba-text/替换名词.txt ./
+          mv temp-ba-text/汉化名词.txt ./
+          mv temp-ba-text/特殊修改.json ./
+          mv temp-ba-text/配置.json ./
+          rm -rf temp-ba-text
 
       - name: 合并内容到当前目录
         run: |
