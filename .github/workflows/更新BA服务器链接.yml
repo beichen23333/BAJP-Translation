@@ -63,8 +63,6 @@ jobs:
         id: diff
         run: |
           bash .github/scripts/changes.sh ba.env.old ba.env
-          echo "::warning::检测结果 - 变更: ${{ steps.diff.outputs.changed }}, 区域: ${{ steps.diff.outputs.regions }}"
-          echo "::notice::详细状态 - JP: ${{ steps.diff.outputs.JP }}, CN: ${{ steps.diff.outputs.CN }}, GL: ${{ steps.diff.outputs.GL }}"
 
       - name: 提交并推送
         if: steps.diff.outputs.changed == 'true'

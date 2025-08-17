@@ -34,7 +34,7 @@ on:
         type: boolean
         default: true
       CommitFlatData:
-        description: '是否提交FlatData？'
+        description: '是否提交FlatData？（仅提交最后运行的）'
         required: false
         type: boolean
         default: true
@@ -108,6 +108,16 @@ jobs:
           rsync -a --remove-source-files temp-repo/ ./
           rm -rf temp-repo
 
+      - name: 获取版本号
+        id: get-versions
+        run: bash .github/scripts/get_version_name.sh ba.env
+
+      - name: 把版本号注入环境变量
+        run: |
+          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}"     >> $GITHUB_ENV
+          echo "BA_VERSION_NAME_CN=${{ steps.get-versions.outputs.BA_VERSION_NAME_CN }}" >> $GITHUB_ENV
+          echo "BA_VERSION_NAME_GL=${{ steps.get-versions.outputs.BA_VERSION_NAME_GL }}" >> $GITHUB_ENV
+
       - name: 克隆BA-FlatData仓库
         if: ${{steps.parse-trigger.outputs.UsePresetFlatData == 'true' || steps.parse-trigger.outputs.CommitFlatData == 'true'}}
         run: |
@@ -145,7 +155,6 @@ jobs:
       - name: 反序列化日服Excel.zip
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          BA_VERSION_NAME=$(grep 'BA_VERSION_NAME=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip
 
       - name: 国服下载
@@ -162,13 +171,13 @@ jobs:
       - name: 反序列化国服Excel.zip
         if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          BA_VERSION_NAME_CN=$(grep 'BA_VERSION_NAME_CN=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip
 
       - name: 获取国际服FlatData
         if: ${{steps.parse-trigger.outputs.GL == 'true'}}
         run: |
           echo "运行国际服反序列化..."
+          rm -rf ./Extracted/FlatData/
           python -m regions.GL.setup_flatdata_gl || echo "生成国际服FL..."
 
       - name: 国际服下载
@@ -184,7 +193,6 @@ jobs:
       - name: 反序列化国际服Excel.zip
         if: ${{steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          BA_VERSION_NAME_GL=$(grep 'BA_VERSION_NAME_GL=' ./ba.env | cut -d '=' -f 2)
           python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip
 
       - name: 提交FlatData到仓库
