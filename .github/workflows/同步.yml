@@ -85,7 +85,7 @@ jobs:
       - name: 运行同步
         if: ${{ inputs.sync || inputs.sync2 }}
         run: |
-          python tool/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --read_zip "${{ inputs.read_zip }}" --out_zip "${{ inputs.out_zip }}" --ba_version_name "${{ steps.get_version.outputs.BA_VERSION_NAME }}" --ba_version_name_cn "${{ steps.get_version.outputs.BA_VERSION_NAME_CN }}" --ba_version_name_gl "${{ steps.get_version.outputs.BA_VERSION_NAME_GL }}"
+          python tool/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --read_zip "${{ inputs.read_zip }}" --out_zip "${{ inputs.out_zip }}" --ba_version_name_cn "${{ steps.get_version.outputs.BA_VERSION_NAME_CN }}" --ba_version_name_gl "${{ steps.get_version.outputs.BA_VERSION_NAME_GL }}"
 
       - name: 提交过滤文件
         run: |
