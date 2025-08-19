@@ -1,4 +1,4 @@
-name: 更新版本（6）
+name: 更新版本（5）
 
 on:
   workflow_dispatch:
