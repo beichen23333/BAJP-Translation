@@ -64,7 +64,7 @@ jobs:
 
       - name: 运行写回
         run: |
-          python replace/back.py --config_path "${{ inputs.config_path }}" --hanhua_dir "${{ inputs.hanhua_dir }}" --rizip_path "${{ inputs.rizip_path }}" --rizip_path2 "${{ inputs.rizip_path2 }}"
+          python tool/back.py --config_path "${{ inputs.config_path }}" --hanhua_dir "${{ inputs.hanhua_dir }}" --rizip_path "${{ inputs.rizip_path }}" --rizip_path2 "${{ inputs.rizip_path2 }}"
 
       - name: 提交过滤文件
         run: |

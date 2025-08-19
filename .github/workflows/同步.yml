@@ -13,22 +13,22 @@ on:
         required: false
         type: boolean
         default: true
+      env_file:
+        description: 'ba.env存放路径'
+        required: true
+        default: 'ba.env'
+        type: string
       config_path:
         description: '配置存放路径'
         required: true
         default: '配置.json'
         type: string
-      env_file:
-        description: '版本号存放路径'
-        required: true
-        default: 'ba.env'
-        type: string
-      out_zip:
-        description: '文本zip存放路径'
+      read_zip:
+        description: '文本zip读取路径'
         required: true
         default: 'BA-Text/日服.zip'
         type: string
-      out_zip2:
+      out_zip:
         description: '文本zip写出路径'
         required: true
         default: 'BA-Text/日服.zip'
@@ -64,25 +64,28 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
-          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git temp-ba-text
 
       - name: 移动指定文件到当前目录
         run: |
-          mv temp-ba-text/替换名词.txt ./
-          mv temp-ba-text/汉化名词.txt ./
-          mv temp-ba-text/特殊修改.json ./
-          mv temp-ba-text/配置.json ./
-          rm -rf temp-ba-text
+          cp BA-Text/替换名词.txt ./
+          cp BA-Text/汉化名词.txt ./
+          cp BA-Text/特殊修改.json ./
+          cp BA-Text/配置.json ./
 
       - name: 合并内容到当前目录
         run: |
           rsync -a --remove-source-files temp-repo/ ./
           rm -rf temp-repo
 
+      - name: 获取版本号
+        id: get_version
+        run: |
+          bash .github/scripts/get_version_name.sh "${{ inputs.env_file }}" >> "$GITHUB_OUTPUT"
+
       - name: 运行同步
         if: ${{ inputs.sync || inputs.sync2 }}
         run: |
-          python replace/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --env_file "${{ inputs.env_file }}" --out_zip "${{ inputs.out_zip }}" --out_zip2 "${{ inputs.out_zip2 }}"
+          python tool/sync.py --sync "${{ inputs.sync }}" --sync2 "${{ inputs.sync2 }}" --config_path "${{ inputs.config_path }}" --read_zip "${{ inputs.read_zip }}" --out_zip "${{ inputs.out_zip }}" --ba_version_name "${{ steps.get_version.outputs.BA_VERSION_NAME }}" --ba_version_name_cn "${{ steps.get_version.outputs.BA_VERSION_NAME_CN }}" --ba_version_name_gl "${{ steps.get_version.outputs.BA_VERSION_NAME_GL }}"
 
       - name: 提交过滤文件
         run: |
