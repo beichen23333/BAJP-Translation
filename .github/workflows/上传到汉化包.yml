@@ -22,11 +22,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: 安装依赖
-        run: |
-          pip install zhconv
-          echo "依赖安装完成"
-
       - name: 克隆仓库
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
