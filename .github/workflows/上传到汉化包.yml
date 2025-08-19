@@ -32,7 +32,6 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Assets-TableBundles.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Chinese-Translation-A.git temp-repo
-          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/asfu222/beicheng.git
 
       - name: 移动指定文件到当前目录
         run: |
@@ -54,7 +53,7 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          cd beicheng
+          cd BA-Text
           git add .
           if git diff-index --quiet HEAD; then
             echo "无更改，跳过提交文件"
