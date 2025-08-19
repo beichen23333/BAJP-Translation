@@ -79,7 +79,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
-          python DeepSeek.py --input_dir "${{ inputs.input_dir }}" --terms_path "${{ inputs.terms_path }}" --output_dir "${{ inputs.output_dir }}" --config_path "${{ inputs.config_path }}" --batch_size "${{ inputs.batch_size }}" --max_workers "${{ inputs.max_workers }}"
+          python tool/DeepSeek.py --input_dir "${{ inputs.input_dir }}" --terms_path "${{ inputs.terms_path }}" --output_dir "${{ inputs.output_dir }}" --config_path "${{ inputs.config_path }}" --batch_size "${{ inputs.batch_size }}" --max_workers "${{ inputs.max_workers }}"
 
       - name: 提交汉化文件
         run: |
