@@ -138,8 +138,8 @@ jobs:
                 "terms_path": "汉化名词.txt",
                 "output_dir": "BA-Text/DeepSeek",
                 "config_path": "配置.json",
-                "batch_size": "50",
-                "max_workers": "10",
+                "batch_size": 50,
+                "max_workers": 10,
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"
               }
