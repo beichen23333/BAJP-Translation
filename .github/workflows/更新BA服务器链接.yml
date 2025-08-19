@@ -1,4 +1,4 @@
-name: 更新BA服务器链接
+name: 更新BA服务器链接（1）
 
 on:
   schedule:

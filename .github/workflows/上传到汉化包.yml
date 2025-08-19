@@ -1,4 +1,4 @@
-name: 上传到汉化包
+name: 上传到汉化包（7）
 
 on:
   workflow_dispatch:
