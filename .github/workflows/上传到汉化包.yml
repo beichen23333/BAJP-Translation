@@ -21,19 +21,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-name: Clone Private Repo
-
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
 
     - name: 部署SSH key
       run: |
-         mkdir -p ~/.ssh
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
