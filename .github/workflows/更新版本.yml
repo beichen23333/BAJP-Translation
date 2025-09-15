@@ -1,4 +1,4 @@
-name: 更新版本（5）
+name: 更新版本（给旧版内容搬到新版）（5）
 
 on:
   workflow_dispatch:
