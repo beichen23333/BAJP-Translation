@@ -1,4 +1,4 @@
-name: DeepSeek（4）
+name: 翻译（4）
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ on:
       output_dir:
         description: '输出文件路径'
         required: true
-        default: 'BA-Text/DeepSeek'
+        default: 'BA-Text/翻译'
         type: string
       config_path:
         description: '配置文件路径'
@@ -26,15 +26,15 @@ on:
       batch_size:
         description: '单次翻译数量'
         required: true
-        default: '50'
+        default: '40'
         type: string
       max_workers:
         description: '线程数量'
         required: true
-        default: '10'
+        default: '7'
         type: string
   repository_dispatch:
-    types: [DeepSeek]
+    types: [翻译]
 
 permissions:
   contents: write
@@ -52,11 +52,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: 克隆仓库
         run: |
@@ -78,8 +73,9 @@ jobs:
       - name: 运行汉化
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
         run: |
-          python tool/DeepSeek.py --input_dir "${{ inputs.input_dir }}" --terms_path "${{ inputs.terms_path }}" --output_dir "${{ inputs.output_dir }}" --config_path "${{ inputs.config_path }}" --batch_size "${{ inputs.batch_size }}" --max_workers "${{ inputs.max_workers }}"
+          python tool/translation.py --input_dir "${{ inputs.input_dir }}" --terms_path "${{ inputs.terms_path }}" --output_dir "${{ inputs.output_dir }}" --config_path "${{ inputs.config_path }}" --batch_size "${{ inputs.batch_size }}" --max_workers "${{ inputs.max_workers }}"
 
       - name: 提交汉化文件
         run: |
