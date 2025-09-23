@@ -87,7 +87,7 @@ jobs:
           old="${{ steps.old_ver.outputs.BA_VERSION_NAME }}"
           if [[ "$new" == "$old" ]]; then
             echo "版本号相同 ($new == $old)，无需处理，工作流结束"
-            exit 0
+            exit 1
           fi
 
       - name: 运行过滤
@@ -134,8 +134,8 @@ jobs:
             -d '{
               "event_type": "翻译",
               "client_payload": {
-                "batch_size": 20,
-                "max_workers": 10,
+                "batch_size": "30",
+                "max_workers": "10",
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"
               }
