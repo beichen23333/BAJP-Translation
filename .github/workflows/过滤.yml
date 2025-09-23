@@ -134,11 +134,7 @@ jobs:
             -d '{
               "event_type": "翻译",
               "client_payload": {
-                "input_dir": "BA-Text/日服",
-                "terms_path": "汉化名词.txt",
-                "output_dir": "BA-Text/翻译",
-                "config_path": "配置.json",
-                "batch_size": 50,
+                "batch_size": 20,
                 "max_workers": 10,
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"

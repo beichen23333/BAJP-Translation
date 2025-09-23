@@ -1,4 +1,3 @@
-#!/bin/bash
 set -euo pipefail
 
 old="$1"

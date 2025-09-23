@@ -37,7 +37,7 @@ on:
         description: '是否提交FlatData？（仅提交最后运行的）'
         required: false
         type: boolean
-        default: true
+        default: false
       UsePresetFlatData:
         description: '是否使用预设FlatData？'
         required: false
@@ -45,6 +45,8 @@ on:
         default: false
   repository_dispatch:
     types: [反序列化部署]
+  schedule:
+    - cron: "47 9 24 9 *" #定时于9月24日晚5点50分运行（GitHub定时会有些许差距，所以提前3分钟）UTC时间比北京时间晚8小时
 
 permissions:
   contents: write
