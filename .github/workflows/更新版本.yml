@@ -57,3 +57,19 @@ jobs:
             git push origin
           fi
           cd ..
+
+      - name: 触发部署
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "翻译",
+              "client_payload": {
+                "batch_size": "30",
+                "max_workers": "8",
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
+              }
+            }'
