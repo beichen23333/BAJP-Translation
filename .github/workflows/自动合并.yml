@@ -10,7 +10,7 @@ on:
         type: string
 
   repository_dispatch:
-    types: [自动合并]
+    types: [合并]
 
 permissions:
   contents: write
@@ -52,7 +52,7 @@ jobs:
         run: |
           bash .github/scripts/get_version_name.sh "${{ inputs.env_path }}" >> "$GITHUB_OUTPUT"
 
-      - name: 运行过滤
+      - name: 运行合并
         run: |
           python tool/合并.py --new_version "${{ steps.new_ver.outputs.BA_VERSION_NAME }}"
 
