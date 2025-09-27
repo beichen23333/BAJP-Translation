@@ -159,20 +159,15 @@ jobs:
           echo "运行日服反序列化..."
           python -m regions.JP.setup_flatdata || echo "生成日服FL..."
 
-      - name: 日服下载
-        if: ${{steps.parse-trigger.outputs.JP == 'true'}}
-        run: |
-          python -m regions.JP.download_files --env_file ./ba.env --output_dir ./downloads || echo "日服文件下载..."
-
       - name: 反序列化日服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_path ./日服${BA_VERSION_NAME}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_path ./日服${BA_VERSION_NAME}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 反序列化日服Excel.zip
         if: ${{steps.parse-trigger.outputs.JP == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 日服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./日服Excel${BA_VERSION_NAME}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 国服下载
         if: ${{steps.parse-trigger.outputs.CN == 'true'}}
@@ -183,12 +178,12 @@ jobs:
       - name: 反序列化国服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_path ./国服${BA_VERSION_NAME_CN}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_path ./国服${BA_VERSION_NAME_CN}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 反序列化国服Excel.zip
         if: ${{steps.parse-trigger.outputs.CN == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国服Excel${BA_VERSION_NAME_CN}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 获取国际服FlatData
         if: ${{steps.parse-trigger.outputs.GL == 'true'}}
@@ -205,12 +200,12 @@ jobs:
       - name: 反序列化国际服ExcelDB.db
         if: ${{steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.DB == 'true'}}
         run: |
-          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_path ./国际服${BA_VERSION_NAME_GL}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_db --db_path ./downloads/ExcelDB.db --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_path ./国际服${BA_VERSION_NAME_GL}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 反序列化国际服Excel.zip
         if: ${{steps.parse-trigger.outputs.GL == 'true' && steps.parse-trigger.outputs.Table == 'true'}}
         run: |
-          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip --no_config ${{steps.parse-trigger.outputs.UseConfig}}
+          python -m unpack_excel_zip --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --server 国际服 --config_file 配置.json --zip_filename Excel.zip --output_zip ./国际服Excel${BA_VERSION_NAME_GL}.zip ${{steps.parse-trigger.outputs.UseConfig == 'false' && '--no_config' || ''}}
 
       - name: 提交FlatData到仓库
         if: ${{steps.flatdata.outputs.should_commit_flatdata == 'true' && steps.parse-trigger.outputs.UsePresetFlatData == 'false'}}
