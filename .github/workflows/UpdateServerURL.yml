@@ -52,20 +52,20 @@ jobs:
             echo "update_detected=false" >> $GITHUB_ENV
           else
             echo "Detected a URL update for the Yostart server, updating the ba.env sever address..."
+            echo "update_detected=true" >> $GITHUB_ENV
             git commit -m "Updata Yostart URL"
             git push origin HEAD
-            echo "update_detected=true" >> $GITHUB_ENV
           fi
 
       - name: Clone repositories
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
 
       - name: Process FlatData
         id: flatdata
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           if [[ "${{inputs.UsePresetFlatData}}" == "true" ]]; then
             echo "Use preset FlatData..."
@@ -79,26 +79,26 @@ jobs:
 
       - name: Get version
         id: get-versions
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
       - name: Get JP FlatData
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           python setup_flatdata.py
 
       - name: Get JP ExcelDB and ExcelTable
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           python download_files.py --env_file ./ba.env --output_dir ./downloads
 
       - name: Unpack ExcelDB and ExcelTable
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file 配置.json --output_zip ./日服${{steps.get-versions.outputs.BA_VERSION_NAME}}.zip
 
       - name: Committing FlatData
-        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -118,7 +118,7 @@ jobs:
           fi
 
       - name: Committing zip
-        if: ${{env.update_detected == 'true' && steps.flatdata.outputs.should_commit_flatdata == 'true'}}
+        if: ${{env.update_detected && steps.flatdata.outputs.should_commit_flatdata}}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -135,7 +135,7 @@ jobs:
           fi
 
       - name: Deploy Extract
-        if: ${{inputs.Extract == 'true'}}
+        if: ${{inputs.Extract}}
         run: |
           curl -sS -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
