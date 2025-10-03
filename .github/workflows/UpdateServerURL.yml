@@ -79,29 +79,36 @@ jobs:
             echo "should_commit_flatdata=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Process FlatData
+        if: ${{(env.update_detected || inputs.DeployFlatData) && inputs.UsePresetFlatData}}
+        run: |
+          echo "Use preset FlatData..."
+          mkdir -p ./Extracted/FlatData
+          cp -r ./BA-FlatData/* ./Extracted/FlatData/
+
       - name: Get version
         id: get-versions
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
-      - name: Get JP FlatData
+      - name: Setup FlatData
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           python setup_flatdata.py
 
-      - name: Get JP ExcelDB and ExcelTable
+      - name: Downloads ExcelDB.db and Excel.zip
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           python download_files.py --env_file ./ba.env --output_dir ./downloads
 
-      - name: Unpack ExcelDB and ExcelTable
+      - name: Unpack ExcelDB.db and Excel.zip
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
-          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file config.json --output_zip ./日服${BA_VERSION_NAME}.zip
+          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData/ --config_file config.json --output_zip ./BA-Text/日服${BA_VERSION_NAME}.zip
 
       - name: Committing FlatData
-        if: ${{env.update_detected || inputs.DeployFlatData}}
+        if: ${{(env.update_detected || inputs.DeployFlatData) && !inputs.UsePresetFlatData}}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -120,11 +127,10 @@ jobs:
           cd
 
       - name: Committing zip
-        if: ${{env.update_detected && steps.flatdata.outputs.should_commit_flatdata}}
+        if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          cp -r ./*.zip BA-Text/ || { echo "::warning::Failed to copy the zip file. Zip not found. Continue to run the subsequent commands."; }
           cd BA-Text
           git add .
 
