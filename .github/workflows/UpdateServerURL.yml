@@ -37,6 +37,8 @@ jobs:
             echo "update_detected=false" >> $GITHUB_ENV
           else
             echo "Detected a URL update for the Yostart server, updating the ba.env sever address..."
+            git commit -m "Updata Yostart URL"
+            git push origin HEAD
             echo "update_detected=true" >> $GITHUB_ENV
           fi
 
