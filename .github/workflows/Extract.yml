@@ -1,0 +1,69 @@
+name: Extract new text
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [Extract]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 2
+
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Clone repositories
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+
+      - name: Get new version
+        id: new_ver
+        run: |
+          bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Get old version
+        id: old_ver
+        run: |
+          git show HEAD^:ba.env > /tmp/old_ba.env
+          bash version.sh /tmp/ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Check version
+        run: |
+          new="${{ steps.new_ver.outputs.BA_VERSION_NAME }}"
+          old="${{ steps.old_ver.outputs.BA_VERSION_NAME }}"
+          if [[ "$new" == "$old" ]]; then
+            echo "The version are the same. No extraction is needed. The process has been terminated. ($new == $old)"
+            exit 1
+          fi
+
+      - name: Run extract
+        run: |
+          python tools/extract.py --new_version "${{ steps.new_ver.outputs.BA_VERSION_NAME }}" --old_version "${{ steps.old_ver.outputs.BA_VERSION_NAME }}" --out_path ./BA-Text/Extract/ --config_path config.json
+
+      - name: Commit extract text
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+          if git diff-index --quiet HEAD; then
+            echo "Skip committing."
+          else
+            git commit -m "No changes, skip committing the file."
+            git push origin
+          fi

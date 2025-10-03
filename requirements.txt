@@ -1,9 +1,8 @@
-xxhash
 requests
-cloudscraper
-pycryptodome
 UnityPy
-pyaxmlparser
+cloudscraper
+xxhash
+pycryptodome
 flatbuffers
-numpy
-tqdm
+pykakasi
+pyaxmlparser
