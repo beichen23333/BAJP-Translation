@@ -2,8 +2,8 @@ name: Update Yostart Server URL
 on:
   workflow_dispatch:
     inputs:
-      Extract:
-        description: 'Extract new text？'
+      DeployFlatData:
+        description: 'Deploy FlatData？'
         required: false
         type: boolean
         default: true
@@ -12,6 +12,11 @@ on:
         required: false
         type: boolean
         default: false
+      Extract:
+        description: 'Extract new text？'
+        required: false
+        type: boolean
+        default: true
 permissions:
   contents: write
 
@@ -53,14 +58,14 @@ jobs:
           fi
 
       - name: Clone repositories
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
 
       - name: Process FlatData
         id: flatdata
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           if [[ "${{inputs.UsePresetFlatData}}" == "true" ]]; then
             echo "Use preset FlatData..."
@@ -74,26 +79,26 @@ jobs:
 
       - name: Get version
         id: get-versions
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
       - name: Get JP FlatData
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           python setup_flatdata.py
 
       - name: Get JP ExcelDB and ExcelTable
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           python download_files.py --env_file ./ba.env --output_dir ./downloads
 
       - name: Unpack ExcelDB and ExcelTable
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file 配置.json --output_zip ./日服${{steps.get-versions.outputs.BA_VERSION_NAME}}.zip
 
       - name: Committing FlatData
-        if: env.update_detected == 'true'
+        if: ${{env.update_detected == 'true' || inputs.DeployFlatData == 'true'}}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -103,11 +108,12 @@ jobs:
           mv "FlatData${BA_VERSION_NAME}.zip" ../../BA-FlatData/
           cd ../../BA-FlatData
           git add "FlatData${BA_VERSION_NAME}.zip"
+          cd
 
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
           else
-            git commit -m "No changes, skip committing the file."
+            git commit -m "Committing."
             git push origin
           fi
 
@@ -116,21 +122,20 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-
-          cd
-          cp -r ./*.zip BA-Assets-TableBundles/ || { echo "::warning::Failed to copy the zip file. Zip not found. Continue to run the subsequent commands."; }
-          cd BA-Assets-TableBundles
+          cp -r ./*.zip BA-Text/ || { echo "::warning::Failed to copy the zip file. Zip not found. Continue to run the subsequent commands."; }
+          cd BA-Text
           git add .
+          cd
 
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
           else
-            git commit -m "No changes, skip committing the file."
+            git commit -m "Committing."
             git push origin
           fi
 
       - name: Deploy Extract
-        if: ${{env.update_detected == 'true' && inputs.Extract == 'true'}}
+        if: ${{inputs.Extract == 'true'}}
         run: |
           curl -sS -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
