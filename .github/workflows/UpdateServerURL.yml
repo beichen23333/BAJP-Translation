@@ -1,5 +1,7 @@
 name: Update Yostart Server URL
 on:
+  schedule:
+    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       DeployFlatData:
@@ -109,14 +111,13 @@ jobs:
           mv "FlatData${BA_VERSION_NAME}.zip" ../../BA-FlatData/
           cd ../../BA-FlatData
           git add "FlatData${BA_VERSION_NAME}.zip"
-          cd
-
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
           else
             git commit -m "Committing."
             git push origin
           fi
+          cd
 
       - name: Committing zip
         if: ${{env.update_detected && steps.flatdata.outputs.should_commit_flatdata}}
@@ -126,7 +127,6 @@ jobs:
           cp -r ./*.zip BA-Text/ || { echo "::warning::Failed to copy the zip file. Zip not found. Continue to run the subsequent commands."; }
           cd BA-Text
           git add .
-          cd
 
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
@@ -134,6 +134,7 @@ jobs:
             git commit -m "Committing."
             git push origin
           fi
+          cd
 
       - name: Deploy Extract
         if: ${{inputs.Extract}}
