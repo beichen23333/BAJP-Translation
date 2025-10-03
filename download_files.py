@@ -1,8 +1,16 @@
 import os
 import sys
-import argparse
+import requests
 from pathlib import Path
-from lib.downloader import FileDownloader
+
+def download_file(url: str, output_file: Path):
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ConnectionError(f"Failed to download {url}. Status code: {response.status_code}")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "wb") as f:
+        f.write(response.content)
+    print(f"Downloaded {url} and saved as {output_file}")
 
 def download_excel_files(env_file: Path, output_dir: Path):
     if not env_file.exists():
@@ -22,19 +30,14 @@ def download_excel_files(env_file: Path, output_dir: Path):
     excel_db_path = output_dir / "ExcelDB.db"
     excel_zip_path = output_dir / "Excel.zip"
 
-    downloader = FileDownloader(excel_db_url, enable_progress=True)
-    if downloader.save_file(excel_db_path):
-        print(f"Downloaded ExcelDB.db to {excel_db_path}")
-    else:
-        print(f"Failed to download ExcelDB.db")
+    download_file(excel_db_url, excel_db_path)
+    download_file(excel_zip_url, excel_zip_path)
 
-    downloader = FileDownloader(excel_zip_url, enable_progress=True)
-    if downloader.save_file(excel_zip_path):
-        print(f"Downloaded Excel.zip to {excel_zip_path}")
-    else:
-        print(f"Failed to download Excel.zip")
+    print(f"Downloaded ExcelDB.db to {excel_db_path}")
+    print(f"Downloaded Excel.zip to {excel_zip_path}")
 
 if __name__ == "__main__":
+    import argparse
     parser = argparse.ArgumentParser(description="Download ExcelDB.db and Excel.zip from BA_SERVER_URL.")
     parser.add_argument("--env_file", type=Path, default="./ba.env", help="Path to the ba.env file.")
     parser.add_argument("--output_dir", type=Path, default="./downloads", help="Directory to save the downloaded files.")
