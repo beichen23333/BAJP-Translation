@@ -95,7 +95,8 @@ jobs:
       - name: Unpack ExcelDB and ExcelTable
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
-          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file 配置.json --output_zip ./日服${{steps.get-versions.outputs.BA_VERSION_NAME}}.zip
+          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
+          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file config.json --output_zip ./日服${BA_VERSION_NAME}.zip
 
       - name: Committing FlatData
         if: ${{env.update_detected || inputs.DeployFlatData}}
