@@ -1,7 +1,17 @@
 name: Update Yostart Server URL
 on:
   workflow_dispatch:
-
+    inputs:
+      Extract:
+        description: 'Extract new text？'
+        required: false
+        type: boolean
+        default: true
+      UsePresetFlatData:
+        description: 'Use preset FlatData？'
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: write
 
@@ -42,23 +52,94 @@ jobs:
             echo "update_detected=true" >> $GITHUB_ENV
           fi
 
-      - name: Deploy Deserialization FlatBuffer
+      - name: Clone repositories
         if: env.update_detected == 'true'
         run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github+json" \
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
+
+      - name: Process FlatData
+        id: flatdata
+        if: env.update_detected == 'true'
+        run: |
+          if [[ "${{inputs.UsePresetFlatData}}" == "true" ]]; then
+            echo "Use preset FlatData..."
+            echo "flatbuffers_dir=./BA-FlatData/" >> $GITHUB_OUTPUT
+            echo "should_commit_flatdata=false" >> $GITHUB_OUTPUT
+          else
+            echo "Use local FlatData..."
+            echo "flatbuffers_dir=./Extracted/FlatData" >> $GITHUB_OUTPUT
+            echo "should_commit_flatdata=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version
+        id: get-versions
+        if: env.update_detected == 'true'
+        run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Get JP FlatData
+        if: env.update_detected == 'true'
+        run: |
+          python setup_flatdata.py
+
+      - name: Get JP ExcelDB and ExcelTable
+        if: env.update_detected == 'true'
+        run: |
+          python download_files.py --env_file ./ba.env --output_dir ./downloads
+
+      - name: Unpack ExcelDB and ExcelTable
+        if: env.update_detected == 'true'
+        run: |
+          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ${{steps.flatdata.outputs.flatbuffers_dir}} --config_file 配置.json --output_zip ./日服${{steps.get-versions.outputs.BA_VERSION_NAME}}.zip
+
+      - name: Committing FlatData
+        if: env.update_detected == 'true'
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          cd ./Extracted/FlatData/
+          zip -j "FlatData${BA_VERSION_NAME}.zip" *.py
+          mv "FlatData${BA_VERSION_NAME}.zip" ../../BA-FlatData/
+          cd ../../BA-FlatData
+          git add "FlatData${BA_VERSION_NAME}.zip"
+
+          if git diff-index --quiet HEAD; then
+            echo "Skip committing."
+          else
+            git commit -m "No changes, skip committing the file."
+            git push origin
+          fi
+
+      - name: Committing zip
+        if: ${{env.update_detected == 'true' && steps.flatdata.outputs.should_commit_flatdata == 'true'}}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          cd
+          cp -r ./*.zip BA-Assets-TableBundles/ || { echo "::warning::Failed to copy the zip file. Zip not found. Continue to run the subsequent commands."; }
+          cd BA-Assets-TableBundles
+          git add .
+
+          if git diff-index --quiet HEAD; then
+            echo "Skip committing."
+          else
+            git commit -m "No changes, skip committing the file."
+            git push origin
+          fi
+
+      - name: Deploy Extract
+        if: ${{env.update_detected == 'true' && inputs.Extract == 'true'}}
+        run: |
+          curl -sS -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
             -d '{
-              "event_type": "翻译",
+              "event_type": "Extract",
               "client_payload": {
                 "source": "auto-updater",
                 "timestamp": "'$(date -u +"%FT%TZ")'"
-              },
-              inputs: {
-                "Extract": "true",
-                "UsePresetFlatData": "false"
               }
             }'
-
