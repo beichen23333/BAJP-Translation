@@ -53,7 +53,7 @@ jobs:
 
       - name: Run extract
         run: |
-          python tools/extract.py --new_version "${{ steps.new_ver.outputs.BA_VERSION_NAME }}" --old_version "${{ steps.old_ver.outputs.BA_VERSION_NAME }}" --out_path ./BA-Text/Extract/ --config_path config.json
+          python tools/extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.old_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text/Extract config.json
 
       - name: Commit extract text
         run: |

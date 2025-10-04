@@ -15,13 +15,13 @@ from extractor import TableExtractorImpl
 
 def parse_args():
     p = ArgumentParser(description="Unpack to JSON files.")
-    p.add_argument("--db_path", type=Path, required=True)
-    p.add_argument("--zip_path", type=Path, required=True)
-    p.add_argument("--output_dir", type=Path, default="./unpacked")
-    p.add_argument("--flatbuffers_dir", type=Path, required=True)
-    p.add_argument("--config_file", type=Path, required=True)
-    p.add_argument("--output_zip", type=Path, required=True)
-    p.add_argument("--threads", type=int, default=10)
+    p.add_argument("db_path", type=Path)
+    p.add_argument("zip_path", type=Path)
+    p.add_argument("output_dir", type=Path)
+    p.add_argument("flatbuffers_dir", type=Path)
+    p.add_argument("config_file", type=Path)
+    p.add_argument("output_zip", type=Path)
+    p.add_argument("threads", type=int, default=10)
     return p.parse_args()
 
 def process_table(table, output_dir):
@@ -49,20 +49,25 @@ def process_excel_table(zip_path, output_dir, flat_data_module_name, threads):
         password = zip_password("Excel.zip")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(temp_dir, pwd=password)
-        extractor_impl = TableExtractorImpl(flat_data_module_name)
+
+        extractor = TableExtractor(str(temp_dir), str(excel_table_dir), flat_data_module_name)
+
         with ThreadPoolExecutor(max_workers=threads) as executor:
             futures = []
             for file_path in temp_dir.glob("*.bytes"):
-                futures.append(executor.submit(extractor_impl.bytes2json, file_path))
+                file_name = file_path.name
+                with file_path.open("rb") as f:
+                    file_data = f.read()
+                futures.append(executor.submit(extractor._process_zip_file, file_name, file_data))
+
             for future in futures:
-                result = future.result()
-                if result:
-                    out_file = excel_table_dir / f"{file_path.stem}.json"
-                    with out_file.open("wt", encoding="utf8") as f:
-                        json.dump(result, f, ensure_ascii=False, indent=2)
+                data, name, success = future.result()
+                if success and data:
+                    out_file = excel_table_dir / name
+                    with out_file.open("wb") as f:
+                        f.write(data)
     finally:
         shutil.rmtree(temp_dir)
-
 
 def main():
     args = parse_args()

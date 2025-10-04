@@ -39,8 +39,8 @@ def download_excel_files(env_file: Path, output_dir: Path):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Download ExcelDB.db and Excel.zip from BA_SERVER_URL.")
-    parser.add_argument("--env_file", type=Path, default="./ba.env", help="Path to the ba.env file.")
-    parser.add_argument("--output_dir", type=Path, default="./downloads", help="Directory to save the downloaded files.")
+    parser.add_argument("env_file", type=Path)
+    parser.add_argument("output_dir", type=Path)
     args = parser.parse_args()
     
     download_excel_files(args.env_file, args.output_dir)

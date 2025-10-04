@@ -5,17 +5,17 @@ on:
   workflow_dispatch:
     inputs:
       DeployFlatData:
-        description: 'Deploy FlatData？'
+        description: 'Deploy FlatData?(Non-automatic)'
         required: false
         type: boolean
-        default: true
+        default: false
       UsePresetFlatData:
-        description: 'Use preset FlatData？'
+        description: 'Use preset FlatData?'
         required: false
         type: boolean
         default: false
       Extract:
-        description: 'Extract new text？'
+        description: 'Extract new text?'
         required: false
         type: boolean
         default: true
@@ -66,20 +66,6 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
 
       - name: Process FlatData
-        id: flatdata
-        if: ${{env.update_detected || inputs.DeployFlatData}}
-        run: |
-          if [[ "${{inputs.UsePresetFlatData}}" == "true" ]]; then
-            echo "Use preset FlatData..."
-            echo "flatbuffers_dir=./BA-FlatData/" >> $GITHUB_OUTPUT
-            echo "should_commit_flatdata=false" >> $GITHUB_OUTPUT
-          else
-            echo "Use local FlatData..."
-            echo "flatbuffers_dir=./Extracted/FlatData" >> $GITHUB_OUTPUT
-            echo "should_commit_flatdata=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Process FlatData
         if: ${{(env.update_detected || inputs.DeployFlatData) && inputs.UsePresetFlatData}}
         run: |
           echo "Use preset FlatData..."
@@ -99,13 +85,13 @@ jobs:
       - name: Downloads ExcelDB.db and Excel.zip
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
-          python download_files.py --env_file ./ba.env --output_dir ./downloads
+          python download_files.py ba.env ./downloads
 
       - name: Unpack ExcelDB.db and Excel.zip
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
-          python unpack_excel.py --db_path ./downloads/ExcelDB.db --zip_path ./downloads/Excel.zip --output_dir ./unpacked --flatbuffers_dir ./Extracted/FlatData/ --config_file config.json --output_zip ./BA-Text/日服${BA_VERSION_NAME}.zip
+          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip
 
       - name: Committing FlatData
         if: ${{(env.update_detected || inputs.DeployFlatData) && !inputs.UsePresetFlatData}}
