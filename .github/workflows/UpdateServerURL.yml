@@ -64,13 +64,12 @@ jobs:
         run: |
           echo "Update detected status: ${{ env.update_detected }}"
           echo "DeployFlatData input: ${{ inputs.DeployFlatData }}"
-          echo "DeployFlatData type: ${{ toJSON(inputs.DeployFlatData) }}"
 
       - name: Clone repositories
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
-          git clone httpsx-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
 
       - name: Process FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && inputs.UsePresetFlatData }}
@@ -94,6 +93,13 @@ jobs:
         run: |
           chmod +x update.sh
           ./update.sh
+
+      - name: Unpack TableCatalog.bytes and MediaCatalog.bytes
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          chmod +x ./MemoryPackRepacker
+          ./MemoryPackRepacker deserialize media MediaCatalog.bytes MediaCatalog.json
+          ./MemoryPackRepacker deserialize table TableCatalog.bytes TableCatalog.json
 
       - name: Unpack ExcelDB.db and Excel.zip
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}

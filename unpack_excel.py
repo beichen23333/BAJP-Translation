@@ -76,7 +76,6 @@ def main():
     flat_data_module_name = ".".join(args.flatbuffers_dir.parts).lstrip(".")
 
     process_excel_db(args.db_path, args.output_dir, flat_data_module_name, args.threads)
-
     process_excel_table(args.zip_path, args.output_dir, flat_data_module_name, args.threads)
 
     with zipfile.ZipFile(args.output_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -84,6 +83,10 @@ def main():
             zf.write(db_schema_file, db_schema_file.relative_to(args.output_dir))
         for excel_table_file in (args.output_dir / "ExcelTable").rglob("*"):
             zf.write(excel_table_file, excel_table_file.relative_to(args.output_dir))
+        for file_name in ["TableCatalog.json", "MediaCatalog.json"]:
+            file_path = Path(file_name)
+            if file_path.exists():
+                zf.write(file_path, file_path.name)
 
 if __name__ == "__main__":
     main()
