@@ -20,7 +20,7 @@ def parse_args():
     p.add_argument("output_dir", type=Path)
     p.add_argument("flatbuffers_dir", type=Path)
     p.add_argument("config_file", type=Path)
-    p.add_argument("output_zip", type=Path)
+    p.add_argument("version_name", type=str)
     p.add_argument("threads", type=int, default=10)
     return p.parse_args()
 
@@ -78,7 +78,10 @@ def main():
     process_excel_db(args.db_path, args.output_dir, flat_data_module_name, args.threads)
     process_excel_table(args.zip_path, args.output_dir, flat_data_module_name, args.threads)
 
-    with zipfile.ZipFile(args.output_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
+    output_zip_name = f"BA-Text/日服{args.version_name}.zip"
+    output_zip_path = Path(output_zip_name)
+
+    with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         for db_schema_file in (args.output_dir / "DBSchema").rglob("*"):
             zf.write(db_schema_file, db_schema_file.relative_to(args.output_dir))
         for excel_table_file in (args.output_dir / "ExcelTable").rglob("*"):
@@ -87,6 +90,8 @@ def main():
             file_path = Path(file_name)
             if file_path.exists():
                 zf.write(file_path, file_path.name)
+
+    print(f"Created output file: {output_zip_path}")
 
 if __name__ == "__main__":
     main()

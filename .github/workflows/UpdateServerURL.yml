@@ -58,12 +58,6 @@ jobs:
             git commit -m "Updata Yostart URL"
             git push origin HEAD
           fi
-          echo "update_detected=${{ env.update_detected }}"
-
-      - name: Check
-        run: |
-          echo "Update detected status: ${{ env.update_detected }}"
-          echo "DeployFlatData input: ${{ inputs.DeployFlatData }}"
 
       - name: Clone repositories
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
@@ -105,7 +99,7 @@ jobs:
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
-          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip 10
+          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json "$BA_VERSION_NAME" 10
 
       - name: Committing FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
@@ -132,15 +126,13 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd BA-Text
-          git add .
-
+          git add "日服${BA_VERSION_NAME}.zip"
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
           else
-            git commit -m "Committing."
+            git commit -m "Add version ${BA_VERSION_NAME}"
             git push origin
           fi
-          cd
 
       - name: Deploy Extract
         if: ${{ inputs.Extract }}

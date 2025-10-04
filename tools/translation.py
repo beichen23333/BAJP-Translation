@@ -155,6 +155,10 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             prompt = prompt.replace("${name}", "\n".join(terms))
 
         file_config = schema_config.get(file_name, [])
+        if not file_config:
+            print(f"文件 {file_name} 在配置中未找到相关配置信息")
+            return
+
         jp_keys = [key for key in file_config if key.lower().endswith("jp")]
 
         if not jp_keys:
@@ -201,7 +205,7 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
             raise ValueError("无效的配置文件")
 
         deepseek_config = config.get("DBSchema", {}).get("DeepSeek", {})
-        schema_config = config.get("DBSchema", {}).get("日服", {})
+        schema_config = {**config.get("DBSchema", {}), **config.get("ExcelTable", {})}
         terms = read_terms(terms_path)
 
         json_files = [f for f in os.listdir(input_dir) if f.endswith(".json")]
@@ -225,12 +229,12 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dir", required=True, help="输入 JSON 文件目录")
-    parser.add_argument("--terms_path", required=True, help="汉化名词文件路径")
-    parser.add_argument("--output_dir", required=True, help="输出目录")
-    parser.add_argument("--config_path", required=True, help="配置文件路径")
-    parser.add_argument("--batch_size", type=int, default=50, help="单次翻译数量")
-    parser.add_argument("--max_workers", type=int, default=5, help="线程数量")
+    parser.add_argument("--input_dir", required=True)
+    parser.add_argument("--terms_path", required=True)
+    parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--config_path", required=True)
+    parser.add_argument("--batch_size", type=int, default=30)
+    parser.add_argument("--max_workers", type=int, default=10)
     args = parser.parse_args()
 
     detect_and_translate_hiragana_katakana(
