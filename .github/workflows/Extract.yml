@@ -34,17 +34,39 @@ jobs:
       - name: Get new version
         id: new_ver
         run: |
+          echo "Current ba.env content:"
+          cat ba.env
+          echo "Running version.sh on current ba.env:"
+          bash version.sh ba.env
           bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
-      - name: Get previous effective version
+      - name: Find last meaningful change in ba.env
         id: prev_ver
         run: |
-          PREV_COMMIT=$(git log --follow --pretty=format:"%H" -1 -- ba.env | head -1)
+          CURRENT_CONTENT=$(cat ba.env)
+          
+          PREV_COMMIT=""
+          for commit in $(git log --pretty=format:"%H" -- ba.env); do
+            PREV_CONTENT=$(git show $commit:ba.env 2>/dev/null || echo "")
+            
+            if [ "$PREV_CONTENT" != "$CURRENT_CONTENT" ] && [ -n "$PREV_CONTENT" ]; then
+              PREV_COMMIT=$commit
+              break
+            fi
+          done
+          
           if [ -z "$PREV_COMMIT" ]; then
-            echo "No previous commit found for ba.env"
+            echo "No previous version with different content found"
             exit 1
           fi
+          
+          echo "Found meaningful previous commit: $PREV_COMMIT"
           git show $PREV_COMMIT:ba.env > /tmp/prev_ba.env
+          echo "Previous ba.env content:"
+          cat /tmp/prev_ba.env
+          
+          echo "Running version.sh on previous ba.env:"
+          bash version.sh /tmp/prev_ba.env
           bash version.sh /tmp/prev_ba.env >> "$GITHUB_OUTPUT"
           echo "prev_commit=$PREV_COMMIT" >> "$GITHUB_OUTPUT"
 
@@ -53,7 +75,13 @@ jobs:
           new="${{ steps.new_ver.outputs.BA_VERSION_NAME }}"
           old="${{ steps.prev_ver.outputs.BA_VERSION_NAME }}"
           if [[ "$new" == "$old" ]]; then
-            echo "The version are the same. No extraction is needed. The process has been terminated. ($new == $old)"
+            echo "ERROR: Version numbers are the same but content differs!"
+            echo "Current version: $new"
+            echo "Previous version: $old"
+            echo "Current ba.env:"
+            cat ba.env
+            echo "Previous ba.env:"
+            cat /tmp/prev_ba.env
             exit 1
           fi
           echo "Version changed: $old -> $new"
