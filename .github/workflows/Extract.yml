@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Setup python version
         uses: actions/setup-python@v5
@@ -36,34 +36,46 @@ jobs:
         run: |
           bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
-      - name: Get old version
-        id: old_ver
+      - name: Get previous effective version
+        id: prev_ver
         run: |
-          git show HEAD^:ba.env > /tmp/ba.env
-          bash version.sh /tmp/ba.env >> "$GITHUB_OUTPUT"
+          PREV_COMMIT=$(git log --follow --pretty=format:"%H" -1 -- ba.env | head -1)
+          if [ -z "$PREV_COMMIT" ]; then
+            echo "No previous commit found for ba.env"
+            exit 1
+          fi
+          git show $PREV_COMMIT:ba.env > /tmp/prev_ba.env
+          bash version.sh /tmp/prev_ba.env >> "$GITHUB_OUTPUT"
+          echo "prev_commit=$PREV_COMMIT" >> "$GITHUB_OUTPUT"
 
       - name: Check version
         run: |
           new="${{ steps.new_ver.outputs.BA_VERSION_NAME }}"
-          old="${{ steps.old_ver.outputs.BA_VERSION_NAME }}"
+          old="${{ steps.prev_ver.outputs.BA_VERSION_NAME }}"
           if [[ "$new" == "$old" ]]; then
             echo "The version are the same. No extraction is needed. The process has been terminated. ($new == $old)"
             exit 1
           fi
+          echo "Version changed: $old -> $new"
 
       - name: Run extract
         run: |
-          python tools/extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.old_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text/Extract config.json
+          python tools/extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text/Extract config.json
 
       - name: Commit extract text
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
+          
           cd BA-Text
-          git add .
-          if git diff-index --quiet HEAD; then
-            echo "Skip committing."
+          
+          if git diff --quiet --exit-code; then
+            echo "No changes to commit"
           else
-            git commit -m "No changes, skip committing the file."
+            echo "Changes detected, committing..."
+            git add .
+            git commit -m "Extract text for version ${{ steps.new_ver.outputs.BA_VERSION_NAME }} (from ${{ steps.prev_ver.outputs.BA_VERSION_NAME }})"
             git push origin
           fi
