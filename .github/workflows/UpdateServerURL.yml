@@ -58,6 +58,7 @@ jobs:
             git commit -m "Updata Yostart URL"
             git push origin HEAD
           fi
+          echo "update_detected=${{ env.update_detected }}"
 
       - name: Clone repositories
         if: ${{env.update_detected || inputs.DeployFlatData}}
@@ -91,7 +92,7 @@ jobs:
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
-          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip
+          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip 10
 
       - name: Committing FlatData
         if: ${{(env.update_detected || inputs.DeployFlatData) && !inputs.UsePresetFlatData}}
