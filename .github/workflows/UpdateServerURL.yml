@@ -80,7 +80,7 @@ jobs:
         run: |
           echo "Use preset FlatData..."
           mkdir -p ./Extracted/FlatData
-          unzip -o ./BA-FlatData/FlatData${BA_VERSION_NAME}.zip -d ./Extracted/FlatData/
+          unzip -o "./BA-FlatData/FlatData${BA_VERSION_NAME}.zip" -d ./Extracted/FlatData/
 
       - name: Setup FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
@@ -103,7 +103,7 @@ jobs:
       - name: Unpack ExcelDB.db and Excel.zip
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
         run: |
-          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json ./BA-Text/日服${BA_VERSION_NAME}.zip 10
+          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json "./BA-Text/日服${BA_VERSION_NAME}.zip" 10
 
       - name: Committing FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
