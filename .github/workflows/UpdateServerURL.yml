@@ -60,6 +60,10 @@ jobs:
           fi
           echo "update_detected=${{ env.update_detected }}"
 
+      - name: Check
+        run: |
+          echo "Update detected status: ${{ env.update_detected }}"
+
       - name: Clone repositories
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
@@ -83,16 +87,17 @@ jobs:
         run: |
           python setup_flatdata.py
 
-      - name: Downloads ExcelDB.db and Excel.zip
+      - name: Downloads files
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
-          python download_files.py ba.env ./downloads
+          chmod +x update.sh
+          ./update.sh
 
       - name: Unpack ExcelDB.db and Excel.zip
         if: ${{env.update_detected || inputs.DeployFlatData}}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
-          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip 10
+          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json BA-Text/日服${BA_VERSION_NAME}.zip 10
 
       - name: Committing FlatData
         if: ${{(env.update_detected || inputs.DeployFlatData) && !inputs.UsePresetFlatData}}
