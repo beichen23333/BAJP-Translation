@@ -39,7 +39,7 @@ jobs:
       - name: Get old version
         id: old_ver
         run: |
-          git show HEAD^:ba.env > /tmp/old_ba.env
+          git show HEAD^:ba.env > /tmp/ba.env
           bash version.sh /tmp/ba.env >> "$GITHUB_OUTPUT"
 
       - name: Check version
