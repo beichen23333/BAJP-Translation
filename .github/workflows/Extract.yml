@@ -87,17 +87,16 @@ jobs:
 
       - name: Run extract
         run: |
-          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" ./BA-Text config.json
+          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" "./BA-Text" config.json
 
       - name: Commit extract text
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           
           cd BA-Text
-          git add .
+          git add ./New
+          git add ./Revise
 
           if git diff --quiet --exit-code; then
             echo "No changes to commit"
