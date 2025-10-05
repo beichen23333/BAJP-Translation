@@ -87,7 +87,7 @@ jobs:
 
       - name: Run extract
         run: |
-          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text config.json
+          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" ./BA-Text config.json
 
       - name: Commit extract text
         env:
