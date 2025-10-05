@@ -82,13 +82,12 @@ jobs:
             cat ba.env
             echo "Previous ba.env:"
             cat /tmp/prev_ba.env
-            exit 1
           fi
           echo "Version changed: $old -> $new"
 
       - name: Run extract
         run: |
-          python tools/extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text/Extract config.json
+          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" BA-Text config.json
 
       - name: Commit extract text
         env:
@@ -98,12 +97,12 @@ jobs:
           git config --global user.name "GitHub Actions"
           
           cd BA-Text
-          
+          git add .
+
           if git diff --quiet --exit-code; then
             echo "No changes to commit"
           else
             echo "Changes detected, committing..."
-            git add .
             git commit -m "Extract text for version ${{ steps.new_ver.outputs.BA_VERSION_NAME }} (from ${{ steps.prev_ver.outputs.BA_VERSION_NAME }})"
             git push origin
           fi
