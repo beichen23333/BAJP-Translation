@@ -52,7 +52,7 @@ class TablesExtractor(TableExtractor):
         super().__init__(
             self.TABLE_FOLDER,
             self.TABLE_EXTRACT_FOLDER,
-            f"{EXTRACT_DIR}",
+            f"{EXTRACT_DIR}.FlatData",
         )
 
     def __extract_worker(self, task_manager: TaskManager) -> None:

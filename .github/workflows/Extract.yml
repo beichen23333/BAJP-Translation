@@ -1,0 +1,100 @@
+name: Extract new text
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [Extract]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Clone repositories
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+
+      - name: Get new version
+        id: new_ver
+        run: |
+          echo "Current ba.env content:"
+          cat ba.env
+          echo "Running version.sh on current ba.env:"
+          bash version.sh ba.env
+          bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Find last meaningful change in ba.env
+        id: prev_ver
+        run: |
+          CURRENT_CONTENT=$(cat ba.env)
+          
+          PREV_COMMIT=""
+          for commit in $(git log --pretty=format:"%H" -- ba.env); do
+            PREV_CONTENT=$(git show $commit:ba.env 2>/dev/null || echo "")
+            
+            if [ "$PREV_CONTENT" != "$CURRENT_CONTENT" ] && [ -n "$PREV_CONTENT" ]; then
+              PREV_COMMIT=$commit
+              break
+            fi
+          done
+          
+          if [ -z "$PREV_COMMIT" ]; then
+            echo "No previous version with different content found"
+            exit 1
+          fi
+          
+          echo "Found meaningful previous commit: $PREV_COMMIT"
+          git show $PREV_COMMIT:ba.env > /tmp/prev_ba.env
+          echo "Previous ba.env content:"
+          cat /tmp/prev_ba.env
+          
+          echo "Running version.sh on previous ba.env:"
+          bash version.sh /tmp/prev_ba.env
+          bash version.sh /tmp/prev_ba.env >> "$GITHUB_OUTPUT"
+          echo "prev_commit=$PREV_COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Check version
+        run: |
+          new="${{ steps.new_ver.outputs.BA_VERSION_NAME }}"
+          old="${{ steps.prev_ver.outputs.BA_VERSION_NAME }}"
+          if [[ "$new" == "$old" ]]; then
+            echo "ERROR: Version numbers are the same but content differs!"
+            echo "Current version: $new"
+            echo "Previous version: $old"
+            echo "Current ba.env:"
+            cat ba.env
+            echo "Previous ba.env:"
+            cat /tmp/prev_ba.env
+          fi
+          echo "Version changed: $old -> $new"
+
+      - name: Run extract
+        run: |
+          python extract.py "BA-Text/日服${{ steps.new_ver.outputs.BA_VERSION_NAME }}.zip" "BA-Text/日服${{ steps.prev_ver.outputs.BA_VERSION_NAME }}.zip" "./BA-Text" config.json
+
+      - name: Commit extract text
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          
+          cd BA-Text
+          git add .
+          git commit -m "Extract text for version ${{ steps.new_ver.outputs.BA_VERSION_NAME }} (from ${{ steps.prev_ver.outputs.BA_VERSION_NAME }})"
+          git push origin

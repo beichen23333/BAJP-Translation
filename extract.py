@@ -48,6 +48,7 @@ def process_duplicates_task(args: Tuple[Path, Path, List[str]]) -> Tuple[str, bo
         return (new_file.name, False)
 
 def find_changes_task(args: Tuple[Path, Path, List[str]]) -> Tuple[str, List[Dict[str, Any]]]:
+    """Task function for finding changes with multiprocessing"""
     new_file, old_file, keys_to_keep = args
     if not new_file.exists() or not old_file.exists():
         return (new_file.name, [])

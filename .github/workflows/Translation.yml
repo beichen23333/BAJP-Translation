@@ -1,0 +1,75 @@
+name: Translation
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_path:
+        description: 'File path'
+        required: true
+        default: 'BA-Text/New'
+        type: string
+      output_path:
+        description: 'Output path'
+        required: true
+        default: 'BA-Text/Translation'
+        type: string
+      batch_size:
+        description: 'Translation batch size'
+        required: true
+        default: '40'
+        type: string
+      max_workers:
+        description: 'Max workers(thread)'
+        required: true
+        default: '10'
+        type: string
+  repository_dispatch:
+    types: [Translation]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 2
+
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Clone repositories
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+
+      - name: Run translation
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python tools/translation.py "${{ inputs.file_path }}" tools/translation_noun.txt "${{ inputs.output_path }}" config.json "${{ inputs.batch_size }}" "${{ inputs.max_workers }}"
+
+      - name: Commit translation files
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add .
+
+          if git diff --quiet --exit-code; then
+            echo "No changes to commit"
+          else
+            echo "Changes detected, committing..."
+            git commit -m "Extract text for version ${{ steps.new_ver.outputs.BA_VERSION_NAME }} (from ${{ steps.prev_ver.outputs.BA_VERSION_NAME }})"
+            git push origin
+          fi

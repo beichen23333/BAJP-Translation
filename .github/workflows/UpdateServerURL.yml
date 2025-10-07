@@ -1,0 +1,154 @@
+name: Update Yostart Server URL
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      DeployFlatData:
+        description: 'Deploy FlatData?(Non-automatic)'
+        required: false
+        type: boolean
+        default: false
+      UsePresetFlatData:
+        description: 'Use preset FlatData?'
+        required: false
+        type: boolean
+        default: false
+      Extract:
+        description: 'Extract new text?'
+        required: false
+        type: boolean
+        default: true
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 2
+
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Update server
+        run: python update_urls.py ba.env server-info.json
+
+      - name: Check if ba.env was modified
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add ba.env
+          if git diff --cached --quiet; then
+            echo "No updates detected, skip the submission."
+            echo "update_detected=false" >> $GITHUB_ENV
+          else
+            echo "Detected a URL update for the Yostart server, updating the ba.env sever address..."
+            echo "update_detected=true" >> $GITHUB_ENV
+            git commit -m "Updata Yostart URL"
+            git push origin HEAD
+          fi
+
+      - name: Clone repositories
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
+
+      - name: Get version
+        id: get-versions
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Get version name
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
+
+      - name: Process FlatData
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && inputs.UsePresetFlatData }}
+        run: |
+          echo "Use preset FlatData..."
+          mkdir -p ./Extracted/FlatData
+          unzip -o "./BA-FlatData/FlatData${BA_VERSION_NAME}.zip" -d ./Extracted/FlatData/
+
+      - name: Setup FlatData
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
+        run: |
+          python setup_flatdata.py
+
+      - name: Downloads files
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          chmod +x update.sh
+          ./update.sh
+
+      - name: Unpack TableCatalog.bytes and MediaCatalog.bytes
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          chmod +x ./MemoryPackRepacker
+          ./MemoryPackRepacker deserialize media MediaCatalog.bytes MediaCatalog.json
+          ./MemoryPackRepacker deserialize table TableCatalog.bytes TableCatalog.json
+
+      - name: Unpack ExcelDB.db and Excel.zip
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json "./BA-Text/日服${BA_VERSION_NAME}.zip" 10
+
+      - name: Committing FlatData
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          cd ./Extracted/FlatData/
+          zip -j "FlatData${BA_VERSION_NAME}.zip" *.py
+          mv "FlatData${BA_VERSION_NAME}.zip" ../../BA-FlatData/
+          cd ../../BA-FlatData
+          git add "FlatData${BA_VERSION_NAME}.zip"
+          if git diff-index --quiet HEAD; then
+            echo "Skip committing."
+          else
+            git commit -m "Committing."
+            git push origin
+          fi
+          cd
+
+      - name: Committing zip
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add "日服${BA_VERSION_NAME}.zip"
+          if git diff-index --quiet HEAD; then
+            echo "Skip committing."
+          else
+            git commit -m "Add version ${BA_VERSION_NAME}"
+            git push origin
+          fi
+
+      - name: Deploy Extract
+        if: ${{ inputs.Extract }}
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "Extract",
+              "client_payload": {
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
+              }
+            }'
