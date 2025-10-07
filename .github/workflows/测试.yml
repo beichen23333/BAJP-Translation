@@ -32,6 +32,14 @@ jobs:
           ./MemoryPackRepacker deserialize media MediaCatalog.bytes BA-Text/MediaCatalog.json
           ./MemoryPackRepacker deserialize table TableCatalog.bytes BA-Text/TableCatalog.json
 
+      - name: TableCatalog.bytes and MediaCatalog.bytes
+        run: |
+          python patch_table_catalog.py
+
+      - name: 测试
+        run: |
+          chmod +x ./MemoryPackRepacker
+          ./MemoryPackRepacker serialize table TableCatalog.json BA-Text/TableCatalog.bytes
 
       - name: Committing zip
         run: |

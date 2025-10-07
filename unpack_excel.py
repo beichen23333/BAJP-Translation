@@ -76,7 +76,7 @@ def main():
     flat_data_module_name = ".".join(args.flatbuffers_dir.parts).lstrip(".")
 
     process_excel_db(args.db_path, args.output_dir, flat_data_module_name, args.threads)
-    process_excel_table(args.zip_path, args.output_dir, flat_data_module_name, args.threads)
+#    process_excel_table(args.zip_path, args.output_dir, flat_data_module_name, args.threads)
 
     with zipfile.ZipFile(args.output_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
         for db_schema_file in (args.output_dir / "DBSchema").rglob("*"):
