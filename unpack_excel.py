@@ -18,7 +18,6 @@ def parse_args():
     p.add_argument("db_path", type=Path)
     p.add_argument("zip_path", type=Path)
     p.add_argument("output_dir", type=Path)
-    p.add_argument("flatbuffers_dir", type=Path)
     p.add_argument("config_file", type=Path)
     p.add_argument("output_zip", type=Path)
     p.add_argument("threads", type=int, default=10)
@@ -29,11 +28,11 @@ def process_table(table, output_dir):
     with out_file.open("wt", encoding="utf8") as f:
         json.dump(TableDatabase.convert_to_list_dict(table), f, ensure_ascii=False, indent=2)
 
-def process_excel_db(db_path, output_dir, flat_data_module_name, threads):
+def process_excel_db(db_path, output_dir, threads):
     db_schema_dir = output_dir / "DBSchema"
     db_schema_dir.mkdir(parents=True, exist_ok=True)
 
-    extractor = TableExtractor(str(db_path), str(db_schema_dir), flat_data_module_name)
+    extractor = TableExtractor(str(db_path), str(db_schema_dir), "Extracted.FlatData")
     db_tables = extractor._process_db_file(str(db_path.resolve()))
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
@@ -41,7 +40,7 @@ def process_excel_db(db_path, output_dir, flat_data_module_name, threads):
         for future in futures:
             future.result()
 
-def process_excel_table(zip_path, output_dir, flat_data_module_name, threads):
+def process_excel_table(zip_path, output_dir, threads):
     excel_table_dir = output_dir / "ExcelTable"
     excel_table_dir.mkdir(parents=True, exist_ok=True)
     temp_dir = Path(tempfile.mkdtemp())
@@ -50,7 +49,7 @@ def process_excel_table(zip_path, output_dir, flat_data_module_name, threads):
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(temp_dir, pwd=password)
 
-        extractor = TableExtractor(str(temp_dir), str(excel_table_dir), flat_data_module_name)
+        extractor = TableExtractor(str(temp_dir), str(excel_table_dir), "Extracted.FlatData")
 
         with ThreadPoolExecutor(max_workers=threads) as executor:
             futures = []
@@ -73,10 +72,8 @@ def main():
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    flat_data_module_name = ".".join(args.flatbuffers_dir.parts).lstrip(".")
-
-    process_excel_db(args.db_path, args.output_dir, flat_data_module_name, args.threads)
-    process_excel_table(args.zip_path, args.output_dir, flat_data_module_name, args.threads)
+    process_excel_db(args.db_path, args.output_dir, args.threads)
+    process_excel_table(args.zip_path, args.output_dir, args.threads)
 
     with zipfile.ZipFile(args.output_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
         for db_schema_file in (args.output_dir / "DBSchema").rglob("*"):
