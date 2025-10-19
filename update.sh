@@ -1,13 +1,13 @@
-#!/bin/bash
-
 export $(grep -v '^#' ba.env | xargs)
 
 download_file() {
     local url=$1
     local output=$2
+    local max_retries=3
+    local retry_count=0
 
     if [ -f "$output" ]; then
-        echo "File already exists, skipping download: $output"
+        echo "文件已存在，跳过下载: $output"
         return
     fi
 
@@ -16,18 +16,23 @@ download_file() {
         mkdir -p "$dir"
     fi
 
-    while true; do
-        echo "Downloading: $url"
+    while [ $retry_count -lt $max_retries ]; do
+        echo "正在下载: $url (尝试 $((retry_count + 1))/$max_retries)"
         http_status=$(curl -s -w "%{http_code}" -o "$output" "$url")
 
         if [ "$http_status" -eq 200 ] && [ -s "$output" ]; then
-            echo "Downloaded: $output"
-            break
+            echo "下载成功: $output"
+            return 0
         else
-            echo "Download failed with status $http_status or file is empty: $url"
-            exit 1
+            echo "下载失败 (HTTP $http_status): $url"
+            rm -f "$output"
+            retry_count=$((retry_count + 1))
+            sleep 2
         fi
     done
+
+    echo "错误: 无法下载文件，请检查网络或 URL 是否正确: $url"
+    return 1
 }
 
 
