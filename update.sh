@@ -6,6 +6,16 @@ download_file() {
     local url=$1
     local output=$2
 
+    if [ -f "$output" ]; then
+        echo "File already exists, skipping download: $output"
+        return
+    fi
+
+    local dir=$(dirname "$output")
+    if [ ! -d "$dir" ]; then
+        mkdir -p "$dir"
+    fi
+
     while true; do
         echo "Downloading: $url"
         http_status=$(curl -s -w "%{http_code}" -o "$output" "$url")
@@ -21,7 +31,12 @@ download_file() {
 }
 
 
-download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/TableCatalog.bytes" "TableCatalog.bytes"
-download_file "${ADDRESSABLE_CATALOG_URL}/MediaResources/Catalog/MediaCatalog.bytes" "MediaCatalog.bytes"
-download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/Excel.zip" "Excel.zip"
-download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/ExcelDB.db" "ExcelDB.db"
+download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/TableCatalog.bytes" "./downloads/TableBundles/TableCatalog.bytes"
+download_file "${ADDRESSABLE_CATALOG_URL}/MediaResources/Catalog/MediaCatalog.bytes" "./downloads/MediaResources/Catalog/MediaCatalog.bytes"
+download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/Excel.zip" "./downloads/TableBundles/Excel.zip"
+download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/ExcelDB.db" "./downloads/TableBundles/ExcelDB.db"
+
+chmod +x ./MemoryPackRepacker
+
+./MemoryPackRepacker deserialize media ./downloads/MediaResources/Catalog/MediaCatalog.bytes ./JP/MediaResources/Catalog/MediaCatalog.json
+./MemoryPackRepacker deserialize table ./downloads/TableBundles/TableCatalog.bytes ./JP/TableBundles/TableCatalog.json

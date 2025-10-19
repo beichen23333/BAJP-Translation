@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       DeployFlatData:
-        description: 'Deploy FlatData?(Non-automatic)'
+        description: 'Deploy FlatData?(only)'
         required: false
         type: boolean
         default: false
@@ -14,6 +14,11 @@ on:
         required: false
         type: boolean
         default: false
+      Generate:
+        description: 'Generate all resources?'
+        required: false
+        type: boolean
+        default: true
       Extract:
         description: 'Extract new text?'
         required: false
@@ -60,53 +65,52 @@ jobs:
           fi
 
       - name: Clone repositories
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
 
       - name: Get version
         id: get-versions
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
       - name: Get version name
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Process FlatData
-        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && inputs.UsePresetFlatData }}
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate) && inputs.UsePresetFlatData }}
         run: |
           echo "Use preset FlatData..."
           mkdir -p ./Extracted/FlatData
           unzip -o "./BA-FlatData/FlatData${BA_VERSION_NAME}.zip" -d ./Extracted/FlatData/
 
       - name: Setup FlatData
-        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate) && !inputs.UsePresetFlatData }}
         run: |
           python setup_flatdata.py
 
       - name: Downloads files
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: |
           chmod +x update.sh
           ./update.sh
 
-      - name: Unpack TableCatalog.bytes and MediaCatalog.bytes
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+      - name: Downloads other files
+        if: ${{ env.update_detected == 'true' || inputs.Generate }}
         run: |
-          chmod +x ./MemoryPackRepacker
-          ./MemoryPackRepacker deserialize media MediaCatalog.bytes MediaCatalog.json
-          ./MemoryPackRepacker deserialize table TableCatalog.bytes TableCatalog.json
+          chmod +x update_other.sh
+          ./update_other.sh
 
       - name: Unpack ExcelDB.db and Excel.zip
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData }}
+        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: |
-          python unpack_excel.py ./ExcelDB.db ./Excel.zip ./unpacked ./Extracted/FlatData config.json "./BA-Text/日服${BA_VERSION_NAME}.zip" 10
+          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json ./JP 10
 
       - name: Committing FlatData
-        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData) && !inputs.UsePresetFlatData }}
+        if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate) && !inputs.UsePresetFlatData }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -130,6 +134,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd BA-Text
+          zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable
           git add "日服${BA_VERSION_NAME}.zip"
           if git diff-index --quiet HEAD; then
             echo "Skip committing."
