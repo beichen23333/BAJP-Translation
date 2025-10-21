@@ -56,3 +56,23 @@ jobs:
 
           git commit -m "Commit"
           git push origin
+
+      - name: Deploy Translation
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d '{
+              "event_type": "Translation",
+              "client_payload": {
+                "source": "auto-updater",
+                "timestamp": "'$(date -u +"%FT%TZ")'"
+              },
+              "inputs": {
+                "file_path": "BA-Text/New",
+                "output_path": "BA-Text/Translation",
+                "batch_size": "20",
+                "max_workers": "10"
+              }
+            }'
