@@ -18,7 +18,7 @@ on:
         description: 'Generate all resources?'
         required: false
         type: boolean
-        default: true
+        default: false
       Extract:
         description: 'Extract new text?'
         required: false
@@ -134,7 +134,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd BA-Text
-          zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable
+          zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable ../JP/TableBundles/TableCatalog.json ../JP/MediaResources/Catalog/MediaCatalog.json
           git add "日服${BA_VERSION_NAME}.zip"
           if git diff-index --quiet HEAD; then
             echo "Skip committing."

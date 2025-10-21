@@ -44,7 +44,7 @@ if [ ! -f "$TABLE_CATALOG_JSON" ]; then
     exit 1
 fi
 
-python3 "./get_filenames.py" "$TABLE_CATALOG_JSON" | while read -r filename; do
+python3 "./tools/get_filenames.py" "$TABLE_CATALOG_JSON" | while read -r filename; do
     download_url="${ADDRESSABLE_CATALOG_URL}/TableBundles/${filename}"
     output_file="./downloads/TableBundles/${filename}"
     download_file "$download_url" "$output_file"
@@ -59,7 +59,7 @@ if [ ! -f "$MEDIA_CATALOG_JSON" ]; then
     exit 1
 fi
 
-python3 "./get_filenames.py" "$MEDIA_CATALOG_JSON" | while read -r path; do
+python3 "./tools/get_filenames.py" "$MEDIA_CATALOG_JSON" | while read -r path; do
     download_url="${ADDRESSABLE_CATALOG_URL}/MediaResources/${path}"
     output_file="./downloads/MediaResources/${path}"
     download_file "$download_url" "$output_file"

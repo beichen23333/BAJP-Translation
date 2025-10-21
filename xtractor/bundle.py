@@ -30,7 +30,7 @@ class BundleExtractor:
     ]
     
     def __init__(self, EXTRACT_DIR, BUNDLE_FOLDER) -> None:
-        self.BUNDLE_FOLDER = TABLE_FOLDER
+        self.BUNDLE_FOLDER = BUNDLE_FOLDER
         self.BUNDLE_EXTRACT_FOLDER = path.join(EXTRACT_DIR, "Table")
 
     def __save(

@@ -16,7 +16,7 @@ on:
       batch_size:
         description: 'Translation batch size'
         required: true
-        default: '40'
+        default: '30'
         type: string
       max_workers:
         description: 'Max workers(thread)'
