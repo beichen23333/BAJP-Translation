@@ -27,12 +27,10 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
 
       - name: Get version
-        if: ${{ inputs.Commit }}
         id: get-versions
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
       - name: Get version name
-        if: ${{ inputs.Commit }}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
 
