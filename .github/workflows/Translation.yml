@@ -65,10 +65,5 @@ jobs:
           cd BA-Text
           git add .
 
-          if git diff --quiet --exit-code; then
-            echo "No changes to commit"
-          else
-            echo "Changes detected, committing..."
-            git commit -m "commit"
-            git push origin
-          fi
+          git commit -m "commit"
+          git push origin

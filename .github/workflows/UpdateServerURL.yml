@@ -120,12 +120,8 @@ jobs:
           mv "FlatData${BA_VERSION_NAME}.zip" ../../BA-FlatData/
           cd ../../BA-FlatData
           git add "FlatData${BA_VERSION_NAME}.zip"
-          if git diff-index --quiet HEAD; then
-            echo "Skip committing."
-          else
-            git commit -m "Committing."
-            git push origin
-          fi
+          git commit -m "Committing."
+          git push origin
           cd
 
       - name: Committing zip
@@ -136,12 +132,8 @@ jobs:
           cd BA-Text
           zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable ../JP/TableBundles/TableCatalog.json ../JP/MediaResources/Catalog/MediaCatalog.json
           git add "日服${BA_VERSION_NAME}.zip"
-          if git diff-index --quiet HEAD; then
-            echo "Skip committing."
-          else
-            git commit -m "Add version ${BA_VERSION_NAME}"
-            git push origin
-          fi
+          git commit -m "Add version ${BA_VERSION_NAME}"
+          git push origin
 
       - name: Deploy Extract
         if: ${{ inputs.Extract }}

@@ -89,5 +89,6 @@ jobs:
           git config --global user.name "GitHub Actions"
           cd beicheng
           git add .
+
           git commit -m "Commit"
           git push origin
