@@ -138,14 +138,9 @@ def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: Lis
             kr_key = get_kr_translation_key(key)
 
             if text_jp:
-                if file_name == "ScenarioScriptExcel.json":
-                    if "ScriptKr" in item and kr_key not in item and jp_key not in item and cn_key not in item:
-                        to_translate.append(text_jp)
-                        indices.append((idx, key))
-                else:
-                    if jp_key not in item and cn_key not in item:
-                        to_translate.append(text_jp)
-                        indices.append((idx, key))
+                if jp_key not in item and cn_key not in item:
+                    to_translate.append(text_jp)
+                    indices.append((idx, key))
 
     return to_translate, indices
 
@@ -154,7 +149,6 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
         file_path = os.path.join(input_dir, file_name)
         output_path = os.path.join(output_dir, file_name)
 
-        # 确保输出目录存在
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         file_deepseek_config = deepseek_config.get(file_name, {})
@@ -190,11 +184,10 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
                 translated_jp = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
                 translated_kr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译)", content)
                 translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
-                
-                if translated_jp:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_jp, "Jp")
                 if translated_kr:
                     process_translation_batch(data, batch_texts, batch_indices, translated_kr, "Kr")
+                if translated_jp:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_jp, "Jp")
                 if translated_cn:
                     process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
             else:
@@ -226,20 +219,17 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
         schema_config = {**config.get("DBSchema", {}), **config.get("ExcelTable", {})}
         terms = read_terms(terms_path)
 
-        # 创建输出目录结构
         db_schema_output = os.path.join(output_dir, "DBSchema")
         excel_table_output = os.path.join(output_dir, "ExcelTable")
         os.makedirs(db_schema_output, exist_ok=True)
         os.makedirs(excel_table_output, exist_ok=True)
 
-        # 处理 DBSchema 文件
         db_schema_input = os.path.join(input_dir, "DBSchema")
         db_schema_files = []
         if os.path.exists(db_schema_input):
             db_schema_files = [f for f in os.listdir(db_schema_input) 
                              if f.endswith(".json") and f in schema_config]
 
-        # 处理 ExcelTable 文件
         excel_table_input = os.path.join(input_dir, "ExcelTable")
         excel_table_files = []
         if os.path.exists(excel_table_input):
