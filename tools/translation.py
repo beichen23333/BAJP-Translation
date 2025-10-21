@@ -40,13 +40,7 @@ def read_config(file_path: str) -> Dict[str, Dict[str, List[str]]]:
         print(f"读取配置文件出错：{str(e)}")
         return {}
 
-def get_cn_key(jp_key: str) -> str:
-    return jp_key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
-
-def get_jp_translation_key(jp_key: str) -> str:
-    return jp_key.replace("Jp", "Re").replace("jp", "re").replace("JP", "RE")
-
-def get_kr_translation_key(kr_key: str) -> str:
+def get_tr_key(kr_key: str) -> str:
     return kr_key.replace("Kr", "Tr").replace("kr", "tr").replace("KR", "TR")
 
 def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, content: str, model: str = "deepseek-chat", max_retries: int = 3) -> Optional[List[str]]:
@@ -104,8 +98,7 @@ def process_translation_batch(
     data: List[Dict], 
     batch_texts: List[str], 
     batch_indices: List[Tuple[int, str]], 
-    translated_texts: List[str],
-    translation_type: str = "Cn"
+    translated_texts: List[str]
 ) -> bool:
     if len(translated_texts) != len(batch_texts):
         print(f"错误：翻译结果数量不匹配（预期{len(batch_texts)}，实际{len(translated_texts)}），本批次跳过")
@@ -114,33 +107,25 @@ def process_translation_batch(
     try:
         for i, (original, translation) in enumerate(zip(batch_texts, translated_texts)):
             idx, key = batch_indices[i]
-            if translation_type == "Cn":
-                target_key = get_cn_key(key)
-            elif translation_type == "Jp":
-                target_key = get_jp_translation_key(key)
-            elif translation_type == "Kr":
-                target_key = get_kr_translation_key(key)
+            target_key = get_tr_key(key)
             data[idx][target_key] = translation
         return True
     except Exception as e:
         print(f"更新数据时出错：{str(e)}")
         return False
 
-def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: List[str], file_name: str) -> Tuple[List[str], List[Tuple[int, str]]]:
+def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], kr_keys: List[str], file_name: str) -> Tuple[List[str], List[Tuple[int, str]]]:
     to_translate = []
     indices = []
 
     for idx, item in enumerate(data):
-        for key in jp_keys:
-            text_jp = item.get(key, "")
-            cn_key = get_cn_key(key)
-            jp_key = get_jp_translation_key(key)
-            kr_key = get_kr_translation_key(key)
+        for key in kr_keys:
+            text_kr = item.get(key, "")
+            tr_key = get_tr_key(key)
 
-            if text_jp:
-                if jp_key not in item and cn_key not in item:
-                    to_translate.append(text_jp)
-                    indices.append((idx, key))
+            if text_kr and not item.get(tr_key):
+                to_translate.append(text_kr)
+                indices.append((idx, key))
 
     return to_translate, indices
 
@@ -159,16 +144,16 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             prompt = prompt.replace("${name}", "\n".join(terms))
 
         file_config = schema_config.get(file_name, [])
-        jp_keys = [key for key in file_config if key.lower().endswith("jp") or key.lower().endswith("jp")]
+        kr_keys = [key for key in file_config if key.lower().endswith("kr") or key.lower().endswith("kr")]
 
-        if not jp_keys:
-            print(f"文件 {file_name} 中未找到以 'jp' 或 'Jp' 结尾的键")
+        if not kr_keys:
+            print(f"文件 {file_name} 中未找到以 'kr' 或 'Kr' 结尾的键")
             return
 
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        to_translate, indices = find_texts_to_translate(data, jp_keys, file_name)
+        to_translate, indices = find_texts_to_translate(data, kr_keys, file_name)
         if not to_translate:
             print(f"文件 {file_name} 中未检测到需要翻译的内容")
             return
@@ -180,24 +165,9 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             batch_texts = to_translate[batch_start:batch_end]
             batch_indices = indices[batch_start:batch_end]
 
-            if file_name == "ScenarioScriptExcel.json":
-                translated_jp = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
-                translated_kr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译)", content)
-                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
-                if translated_kr:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_kr, "Kr")
-                if translated_jp:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_jp, "Jp")
-                if translated_cn:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
-            else:
-                translated_jp = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
-                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (日译)", content)
-                
-                if translated_jp:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_jp, "Jp")
-                if translated_cn:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
+            translated_tr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译中)", content)
+            if translated_tr:
+                process_translation_batch(data, batch_texts, batch_indices, translated_tr)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(executor.map(translate_batch, range(0, len(to_translate), batch_size)))
@@ -209,7 +179,7 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
     except Exception as e:
         print(f"处理文件 {file_name} 时出错：{str(e)}")
 
-def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, output_dir: str, config_path: str, batch_size: int = 20, max_workers: int = 5) -> None:
+def detect_and_translate_korean(input_dir: str, terms_path: str, output_dir: str, config_path: str, batch_size: int = 20, max_workers: int = 5) -> None:
     try:
         config = read_config(config_path)
         if not config:
@@ -278,7 +248,7 @@ if __name__ == "__main__":
     parser.add_argument("max_workers", type=int, default=10, help="最大工作线程数")
     args = parser.parse_args()
 
-    detect_and_translate_hiragana_katakana(
+    detect_and_translate_korean(
         input_dir=args.input_dir,
         terms_path=args.terms_path,
         output_dir=args.output_dir,

@@ -63,7 +63,12 @@ jobs:
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
 
-      - name: Run Back
+      - name: Run back
+        if: ${{ inputs.Back }}
+        run: |
+          python tools/back.py config.json ./BA-Text
+
+      - name: Run repack
         if: ${{ inputs.Back }}
         run: |
           python repack_extract.py ./BA-Text ./BA-Text/日服备份.zip config.json 5
