@@ -16,7 +16,7 @@ on:
       batch_size:
         description: 'Translation batch size'
         required: true
-        default: '30'
+        default: '20'
         type: string
       max_workers:
         description: 'Max workers(thread)'
@@ -64,12 +64,12 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd BA-Text
-          git add .
+          git add "${{ inputs.output_path }}"
 
           if git diff --quiet --exit-code; then
             echo "No changes to commit"
           else
             echo "Changes detected, committing..."
-            git commit -m "Extract text for version ${{ steps.new_ver.outputs.BA_VERSION_NAME }} (from ${{ steps.prev_ver.outputs.BA_VERSION_NAME }})"
+            git commit -m "commit"
             git push origin
           fi
