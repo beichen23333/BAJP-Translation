@@ -49,6 +49,14 @@ jobs:
       - name: Update server
         run: python update_urls.py ba.env server-info.json
 
+      - name: Get version
+        id: get-versions
+        run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Get version name
+        run: |
+          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
+
       - name: Check if ba.env was modified
         run: |
           git config --global user.name "GitHub Actions"
@@ -69,16 +77,6 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-FlatData.git
-
-      - name: Get version
-        id: get-versions
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
-        run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
-
-      - name: Get version name
-        if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
-        run: |
-          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
 
       - name: Process FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate) && inputs.UsePresetFlatData }}
