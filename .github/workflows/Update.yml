@@ -1,0 +1,60 @@
+name: Update
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [Update]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Clone repositories
+        run: |
+          git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
+
+      - name: Get version
+        if: ${{ inputs.Commit }}
+        id: get-versions
+        run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
+
+      - name: Get version name
+        if: ${{ inputs.Commit }}
+        run: |
+          echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
+
+      - name: Run clean
+        run: |
+          python tools/clean.py "./BA-Text/日服${BA_VERSION_NAME}.zip" config.json ./BA-Text/日服.zip
+
+      - name: Run update
+        run: |
+          python tools/update.py ./BA-Text/日服.zip ./BA-Text/日服备份.zip ./BA-Text/日服备份.zip
+
+      - name: Run Commit
+        if: ${{ inputs.Commit }}
+        run: |
+          python tools/format.py "./BA-Text/日服${BA_VERSION_NAME}.zip"
+
+      - name: Commit file
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          cd BA-Text
+          git add 日服备份.zip
+
+          git commit -m "Commit"
+          git push origin
