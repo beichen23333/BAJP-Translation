@@ -36,8 +36,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          python -m pip install --upgrade pip
-          pip install requests
+          pip install -r requirements.txt
 
       - name: get SSH key
         run: |
@@ -51,14 +50,17 @@ jobs:
           git clone https://x-access-token:${{ secrets.APK_SRC_REPO }}@github.com/beichen23333/BA-Text.git
 
       - name: Clone repositories beicheng
+        if: ${{ inputs.Commit }}
         run: |
           git clone git@github.com:asfu222/beicheng.git
 
       - name: Get version
+        if: ${{ inputs.Commit }}
         id: get-versions
         run: bash version.sh ba.env >> "$GITHUB_OUTPUT"
 
       - name: Get version name
+        if: ${{ inputs.Commit }}
         run: |
           echo "BA_VERSION_NAME=${{ steps.get-versions.outputs.BA_VERSION_NAME }}" >> $GITHUB_ENV
 
