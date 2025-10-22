@@ -30,6 +30,12 @@ def get_cn_field(jp_field):
         return jp_field.replace('jp', 'cn')
     return jp_field
 
+def get_re_key(jp_key: str) -> str:
+    return jp_key.replace("Jp", "Re").replace("jp", "re").replace("JP", "RE")
+
+def get_tr_key(kr_key: str) -> str:
+    return kr_key.replace("Kr", "Tr").replace("kr", "tr").replace("KR", "TR")
+
 def ensure_cn_fields(data, jp_fields):
     # Ensure CN fields exist (temporary for mapping)
     modified = False
@@ -42,13 +48,24 @@ def ensure_cn_fields(data, jp_fields):
                 modified = True
     return modified
 
-def remove_cn_fields(data, jp_fields):
-    # Remove temporary CN fields after processing
+def remove_additional_fields(data, jp_fields):
+    # Remove temporary CN fields and any Tr/Re fields after processing
     for item in data:
         for jp_field in jp_fields:
+            # Remove CN fields
             cn_field = get_cn_field(jp_field)
             if cn_field in item:
                 del item[cn_field]
+            
+            # Remove Re fields (derived from JP)
+            re_field = get_re_key(jp_field)
+            if re_field in item:
+                del item[re_field]
+            
+            # Remove Tr fields (derived from KR, but we'll check anyway)
+            tr_field = get_tr_key(jp_field)
+            if tr_field in item:
+                del item[tr_field]
 
 def replace_jp_with_cn(modified_dir, config_path):
     modified_dir = Path(modified_dir)
@@ -59,6 +76,7 @@ def replace_jp_with_cn(modified_dir, config_path):
         processed_files = 0
         replaced_items = 0
         skipped_empty = 0
+        removed_fields = 0
 
         # Process all files in DBSchema and ExcelTable
         for schema_type, schema in cfg.items():
@@ -129,8 +147,8 @@ def replace_jp_with_cn(modified_dir, config_path):
                         
                         counters[jp_field][key] = idx + 1
 
-                # Remove temporary CN fields
-                remove_cn_fields(source_data, jp_fields)
+                # Remove temporary CN fields and any Tr/Re fields
+                remove_additional_fields(source_data, jp_fields)
                 
                 save_json(source_file, source_data)
                 

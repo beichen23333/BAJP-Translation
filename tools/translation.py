@@ -126,30 +126,37 @@ def process_translation_batch(
         print(f"更新数据时出错：{str(e)}")
         return False
 
-def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: List[str], kr_keys: List[str], file_name: str) -> Tuple[List[str], List[Tuple[int, str]]]:
+def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: List[str], kr_keys: List[str], file_name: str) -> Tuple[List[Dict], List[Tuple[int, str, str]]]:
+    """
+    返回格式: (待翻译文本列表, 索引信息列表)
+    每个待翻译文本是字典: {"text": 文本, "type": "jp" 或 "kr"}
+    索引信息是元组: (数据索引, 字段键, 文本类型)
+    """
     to_translate = []
     indices = []
 
     for idx, item in enumerate(data):
-        # 处理日文键
+        # 处理日文键（翻译为Cn和Re）
         for key in jp_keys:
             text_jp = item.get(key, "")
             cn_key = get_cn_key(key)
             re_key = get_re_key(key)
 
-            if text_jp and not item.get(cn_key):
-                to_translate.append(text_jp)
-                indices.append((idx, key))
+            # 只有当原文存在且目标字段为空时才翻译
+            if text_jp and not item.get(cn_key) and not item.get(re_key):
+                to_translate.append({"text": text_jp, "type": "jp"})
+                indices.append((idx, key, "jp"))
         
-        # 处理韩文键（仅对ScenarioScriptExcel.json）
+        # 处理韩文键（仅对ScenarioScriptExcel.json，翻译为Tr）
         if file_name == "ScenarioScriptExcel.json":
             for key in kr_keys:
                 text_kr = item.get(key, "")
                 tr_key = get_tr_key(key)
 
+                # 只有当原文存在且目标字段为空时才翻译
                 if text_kr and not item.get(tr_key):
-                    to_translate.append(text_kr)
-                    indices.append((idx, key))
+                    to_translate.append({"text": text_kr, "type": "kr"})
+                    indices.append((idx, key, "kr"))
 
     return to_translate, indices
 
@@ -185,32 +192,38 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
 
         def translate_batch(batch_start):
             batch_end = batch_start + batch_size
-            batch_texts = to_translate[batch_start:batch_end]
+            batch_items = to_translate[batch_start:batch_end]
             batch_indices = indices[batch_start:batch_end]
-
-            if file_name == "ScenarioScriptExcel.json":
-                # 第一次日译（Cn）
-                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (第一次日译)", content)
-                # 第二次日译（Re）
-                translated_re = translate_with_deepseek(batch_texts, terms, prompt + " (第二次日译)", content)
-                # 韩译（Tr）
-                translated_tr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译)", content)
+            
+            # 分离日文和韩文文本
+            jp_texts = []
+            kr_texts = []
+            jp_indices = []
+            kr_indices = []
+            
+            for i, (item, (idx, key, text_type)) in enumerate(zip(batch_items, batch_indices)):
+                if text_type == "jp":
+                    jp_texts.append(item["text"])
+                    jp_indices.append((idx, key))
+                elif text_type == "kr":
+                    kr_texts.append(item["text"])
+                    kr_indices.append((idx, key))
+            
+            # 处理日文翻译（Cn和Re）
+            if jp_texts:
+                translated_cn = translate_with_deepseek(jp_texts, terms, prompt + " (日译中)", content)
+                translated_re = translate_with_deepseek(jp_texts, terms, prompt + " (日译中)", content)
                 
                 if translated_cn:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
+                    process_translation_batch(data, jp_texts, jp_indices, translated_cn, "Cn")
                 if translated_re:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_re, "Re")
+                    process_translation_batch(data, jp_texts, jp_indices, translated_re, "Re")
+            
+            # 处理韩文翻译（Tr，仅对ScenarioScriptExcel.json）
+            if kr_texts and file_name == "ScenarioScriptExcel.json":
+                translated_tr = translate_with_deepseek(kr_texts, terms, prompt + " (韩译中)", content)
                 if translated_tr:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_tr, "Tr")
-            else:
-                # 其他文件只进行两次日译
-                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (第一次日译)", content)
-                translated_re = translate_with_deepseek(batch_texts, terms, prompt + " (第二次日译)", content)
-                
-                if translated_cn:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
-                if translated_re:
-                    process_translation_batch(data, batch_texts, batch_indices, translated_re, "Re")
+                    process_translation_batch(data, kr_texts, kr_indices, translated_tr, "Tr")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(executor.map(translate_batch, range(0, len(to_translate), batch_size)))
