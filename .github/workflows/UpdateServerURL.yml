@@ -97,7 +97,7 @@ jobs:
           ./update.sh
 
       - name: Downloads other files
-        if: ${{ env.update_detected == 'true' || inputs.Generate }}
+        if: ${{ inputs.Generate }}
         run: |
           chmod +x update_other.sh
           ./update_other.sh
@@ -128,7 +128,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           cd BA-Text
-          zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable ../JP/TableBundles/TableCatalog.json ../JP/MediaResources/Catalog/MediaCatalog.json
+          zip -r "./日服${BA_VERSION_NAME}.zip" ../JP/DBSchema ../JP/ExcelTable ../TableCatalog.json ../MediaCatalog.json
           git add "日服${BA_VERSION_NAME}.zip"
           git commit -m "Add version ${BA_VERSION_NAME}"
           git push origin

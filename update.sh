@@ -43,5 +43,5 @@ download_file "${ADDRESSABLE_CATALOG_URL}/TableBundles/ExcelDB.db" "./downloads/
 
 chmod +x ./MemoryPackRepacker
 
-./MemoryPackRepacker deserialize media ./downloads/MediaResources/Catalog/MediaCatalog.bytes ./JP/MediaResources/Catalog/MediaCatalog.json
-./MemoryPackRepacker deserialize table ./downloads/TableBundles/TableCatalog.bytes ./JP/TableBundles/TableCatalog.json
+./MemoryPackRepacker deserialize media ./downloads/MediaResources/Catalog/MediaCatalog.bytes MediaCatalog.json
+./MemoryPackRepacker deserialize table ./downloads/TableBundles/TableCatalog.bytes TableCatalog.json
