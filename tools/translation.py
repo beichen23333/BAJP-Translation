@@ -67,7 +67,7 @@ def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, con
                 "top_p": 0.9,
                 "frequency_penalty": 0,
                 "presence_penalty": 0
-            ]
+            }
             
             response = requests.post(
                 DEEPSEEK_API_URL,
@@ -283,13 +283,13 @@ def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, outp
         raise
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", help="输入目录，包含 DBSchema 和 ExcelTable 文件夹")
+    parser = argparse.ArgumentParser(description="翻译工具")
+    parser.add_argument("input_dir", help="输入目录路径")
     parser.add_argument("terms_path", help="术语表文件路径")
-    parser.add_argument("output_dir", help="输出目录")
+    parser.add_argument("output_dir", help="输出目录路径")
     parser.add_argument("config_path", help="配置文件路径")
-    parser.add_argument("batch_size", type=int, default=30, help="单次翻译数量")
-    parser.add_argument("max_workers", type=int, default=10, help="最大工作线程数")
+    parser.add_argument("batch_size", type=int, help="批处理大小")
+    parser.add_argument("max_workers", type=int, help="最大工作线程数")
     args = parser.parse_args()
 
     detect_and_translate_hiragana_katakana(
