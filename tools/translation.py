@@ -131,6 +131,11 @@ def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], kr_keys: Lis
 
 def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[str], deepseek_config: Dict, schema_config: Dict, batch_size: int, max_workers: int):
     try:
+        # 只处理 ScenarioScriptExcel.json 文件
+        if file_name != "ScenarioScriptExcel.json":
+            print(f"跳过非目标文件：{file_name}")
+            return
+
         file_path = os.path.join(input_dir, file_name)
         output_path = os.path.join(output_dir, file_name)
 
@@ -144,10 +149,10 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             prompt = prompt.replace("${name}", "\n".join(terms))
 
         file_config = schema_config.get(file_name, [])
-        kr_keys = [key for key in file_config if key.lower().endswith("kr") or key.lower().endswith("kr")]
+        kr_keys = [key for key in file_config if key.lower().endswith("kr")]
 
         if not kr_keys:
-            print(f"文件 {file_name} 中未找到以 'kr' 或 'Kr' 结尾的键")
+            print(f"文件 {file_name} 中未找到以 'kr' 结尾的键")
             return
 
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -216,17 +221,19 @@ def detect_and_translate_korean(input_dir: str, terms_path: str, output_dir: str
             print("未找到任何需要处理的 JSON 文件")
             return
 
-        print(f"检测到 {len(all_files)} 个文件，启动多线程处理...")
+        print(f"检测到 {len(all_files)} 个文件，但只处理 ScenarioScriptExcel.json...")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = []
             for folder_type, file_name, input_dir_path, output_dir_path in all_files:
-                future = executor.submit(
-                    process_file,
-                    file_name, input_dir_path, output_dir_path, terms, 
-                    deepseek_config, schema_config, batch_size, max_workers
-                )
-                futures.append(future)
+                # 只提交 ScenarioScriptExcel.json 文件进行处理
+                if file_name == "ScenarioScriptExcel.json":
+                    future = executor.submit(
+                        process_file,
+                        file_name, input_dir_path, output_dir_path, terms, 
+                        deepseek_config, schema_config, batch_size, max_workers
+                    )
+                    futures.append(future)
             
             for future in concurrent.futures.as_completed(futures):
                 try:
