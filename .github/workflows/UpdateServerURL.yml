@@ -105,7 +105,7 @@ jobs:
       - name: Unpack ExcelDB.db and Excel.zip
         if: ${{ env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate}}
         run: |
-          python unpack_excel.py ./downloads/ExcelDB.db ./downloads/Excel.zip ./unpacked ./Extracted/FlatData config.json ./JP 10
+          python unpack_excel.py ./downloads/TableBundles/ExcelDB.db ./downloads/TableBundles/Excel.zip ./unpacked ./Extracted/FlatData config.json ./JP 10
 
       - name: Committing FlatData
         if: ${{ (env.update_detected == 'true' || inputs.DeployFlatData || inputs.Generate) && !inputs.UsePresetFlatData }}
