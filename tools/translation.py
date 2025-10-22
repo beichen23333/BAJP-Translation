@@ -40,6 +40,12 @@ def read_config(file_path: str) -> Dict[str, Dict[str, List[str]]]:
         print(f"读取配置文件出错：{str(e)}")
         return {}
 
+def get_cn_key(jp_key: str) -> str:
+    return jp_key.replace("Jp", "Cn").replace("jp", "cn").replace("JP", "CN")
+
+def get_re_key(jp_key: str) -> str:
+    return jp_key.replace("Jp", "Re").replace("jp", "re").replace("JP", "RE")
+
 def get_tr_key(kr_key: str) -> str:
     return kr_key.replace("Kr", "Tr").replace("kr", "tr").replace("KR", "TR")
 
@@ -61,7 +67,7 @@ def translate_with_deepseek(texts: List[str], terms: List[str], prompt: str, con
                 "top_p": 0.9,
                 "frequency_penalty": 0,
                 "presence_penalty": 0
-            }
+            ]
             
             response = requests.post(
                 DEEPSEEK_API_URL,
@@ -98,7 +104,8 @@ def process_translation_batch(
     data: List[Dict], 
     batch_texts: List[str], 
     batch_indices: List[Tuple[int, str]], 
-    translated_texts: List[str]
+    translated_texts: List[str],
+    translation_type: str = "Cn"
 ) -> bool:
     if len(translated_texts) != len(batch_texts):
         print(f"错误：翻译结果数量不匹配（预期{len(batch_texts)}，实际{len(translated_texts)}），本批次跳过")
@@ -107,39 +114,49 @@ def process_translation_batch(
     try:
         for i, (original, translation) in enumerate(zip(batch_texts, translated_texts)):
             idx, key = batch_indices[i]
-            target_key = get_tr_key(key)
+            if translation_type == "Cn":
+                target_key = get_cn_key(key)
+            elif translation_type == "Re":
+                target_key = get_re_key(key)
+            elif translation_type == "Tr":
+                target_key = get_tr_key(key)
             data[idx][target_key] = translation
         return True
     except Exception as e:
         print(f"更新数据时出错：{str(e)}")
         return False
 
-def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], kr_keys: List[str], file_name: str) -> Tuple[List[str], List[Tuple[int, str]]]:
+def find_texts_to_translate(data: List[Dict[str, Union[str, int]]], jp_keys: List[str], kr_keys: List[str], file_name: str) -> Tuple[List[str], List[Tuple[int, str]]]:
     to_translate = []
     indices = []
 
     for idx, item in enumerate(data):
-        for key in kr_keys:
-            text_kr = item.get(key, "")
-            tr_key = get_tr_key(key)
+        # 处理日文键
+        for key in jp_keys:
+            text_jp = item.get(key, "")
+            cn_key = get_cn_key(key)
+            re_key = get_re_key(key)
 
-            if text_kr and not item.get(tr_key):
-                to_translate.append(text_kr)
+            if text_jp and not item.get(cn_key):
+                to_translate.append(text_jp)
                 indices.append((idx, key))
+        
+        # 处理韩文键（仅对ScenarioScriptExcel.json）
+        if file_name == "ScenarioScriptExcel.json":
+            for key in kr_keys:
+                text_kr = item.get(key, "")
+                tr_key = get_tr_key(key)
+
+                if text_kr and not item.get(tr_key):
+                    to_translate.append(text_kr)
+                    indices.append((idx, key))
 
     return to_translate, indices
 
 def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[str], deepseek_config: Dict, schema_config: Dict, batch_size: int, max_workers: int):
     try:
-        # 只处理 ScenarioScriptExcel.json 文件
-        if file_name != "ScenarioScriptExcel.json":
-            print(f"跳过非目标文件：{file_name}")
-            return
-
         file_path = os.path.join(input_dir, file_name)
         output_path = os.path.join(output_dir, file_name)
-
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         file_deepseek_config = deepseek_config.get(file_name, {})
         prompt = file_deepseek_config.get("prompt", "")
@@ -149,16 +166,17 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             prompt = prompt.replace("${name}", "\n".join(terms))
 
         file_config = schema_config.get(file_name, [])
+        jp_keys = [key for key in file_config if key.lower().endswith("jp")]
         kr_keys = [key for key in file_config if key.lower().endswith("kr")]
 
-        if not kr_keys:
-            print(f"文件 {file_name} 中未找到以 'kr' 结尾的键")
+        if not jp_keys and not kr_keys:
+            print(f"文件 {file_name} 中未找到以 'jp' 或 'kr' 结尾的键")
             return
 
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        to_translate, indices = find_texts_to_translate(data, kr_keys, file_name)
+        to_translate, indices = find_texts_to_translate(data, jp_keys, kr_keys, file_name)
         if not to_translate:
             print(f"文件 {file_name} 中未检测到需要翻译的内容")
             return
@@ -170,13 +188,34 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
             batch_texts = to_translate[batch_start:batch_end]
             batch_indices = indices[batch_start:batch_end]
 
-            translated_tr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译中)", content)
-            if translated_tr:
-                process_translation_batch(data, batch_texts, batch_indices, translated_tr)
+            if file_name == "ScenarioScriptExcel.json":
+                # 第一次日译（Cn）
+                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (第一次日译)", content)
+                # 第二次日译（Re）
+                translated_re = translate_with_deepseek(batch_texts, terms, prompt + " (第二次日译)", content)
+                # 韩译（Tr）
+                translated_tr = translate_with_deepseek(batch_texts, terms, prompt + " (韩译)", content)
+                
+                if translated_cn:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
+                if translated_re:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_re, "Re")
+                if translated_tr:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_tr, "Tr")
+            else:
+                # 其他文件只进行两次日译
+                translated_cn = translate_with_deepseek(batch_texts, terms, prompt + " (第一次日译)", content)
+                translated_re = translate_with_deepseek(batch_texts, terms, prompt + " (第二次日译)", content)
+                
+                if translated_cn:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_cn, "Cn")
+                if translated_re:
+                    process_translation_batch(data, batch_texts, batch_indices, translated_re, "Re")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(executor.map(translate_batch, range(0, len(to_translate), batch_size)))
 
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"文件 {file_name} 翻译完成并保存至 {output_path}")
@@ -184,7 +223,7 @@ def process_file(file_name: str, input_dir: str, output_dir: str, terms: List[st
     except Exception as e:
         print(f"处理文件 {file_name} 时出错：{str(e)}")
 
-def detect_and_translate_korean(input_dir: str, terms_path: str, output_dir: str, config_path: str, batch_size: int = 20, max_workers: int = 5) -> None:
+def detect_and_translate_hiragana_katakana(input_dir: str, terms_path: str, output_dir: str, config_path: str, batch_size: int = 20, max_workers: int = 5) -> None:
     try:
         config = read_config(config_path)
         if not config:
@@ -221,19 +260,17 @@ def detect_and_translate_korean(input_dir: str, terms_path: str, output_dir: str
             print("未找到任何需要处理的 JSON 文件")
             return
 
-        print(f"检测到 {len(all_files)} 个文件，但只处理 ScenarioScriptExcel.json...")
+        print(f"检测到 {len(all_files)} 个文件，启动处理...")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = []
             for folder_type, file_name, input_dir_path, output_dir_path in all_files:
-                # 只提交 ScenarioScriptExcel.json 文件进行处理
-                if file_name == "ScenarioScriptExcel.json":
-                    future = executor.submit(
-                        process_file,
-                        file_name, input_dir_path, output_dir_path, terms, 
-                        deepseek_config, schema_config, batch_size, max_workers
-                    )
-                    futures.append(future)
+                future = executor.submit(
+                    process_file,
+                    file_name, input_dir_path, output_dir_path, terms, 
+                    deepseek_config, schema_config, batch_size, max_workers
+                )
+                futures.append(future)
             
             for future in concurrent.futures.as_completed(futures):
                 try:
@@ -251,11 +288,11 @@ if __name__ == "__main__":
     parser.add_argument("terms_path", help="术语表文件路径")
     parser.add_argument("output_dir", help="输出目录")
     parser.add_argument("config_path", help="配置文件路径")
-    parser.add_argument("batch_size", type=int, default=30, help="批处理大小")
+    parser.add_argument("batch_size", type=int, default=30, help="单次翻译数量")
     parser.add_argument("max_workers", type=int, default=10, help="最大工作线程数")
     args = parser.parse_args()
 
-    detect_and_translate_korean(
+    detect_and_translate_hiragana_katakana(
         input_dir=args.input_dir,
         terms_path=args.terms_path,
         output_dir=args.output_dir,
