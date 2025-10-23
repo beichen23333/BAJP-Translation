@@ -180,7 +180,6 @@ def main():
     parser.add_argument('modified_dir', help='Directory containing NewBack and ReviseBack folders')
     args = parser.parse_args()
 
-    exit_code = 0
     try:
         processed, replaced = replace_jp_with_cn(
             Path(args.modified_dir),
@@ -188,12 +187,8 @@ def main():
         )
         if replaced == 0:
             print("No replacements were made")
-            exit_code = 1
     except Exception as e:
         print(f"Fatal error: {str(e)}")
-        exit_code = 2
-    
-    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()
