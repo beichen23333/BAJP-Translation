@@ -36,36 +36,15 @@ def get_re_key(jp_key: str) -> str:
 def get_tr_key(kr_key: str) -> str:
     return kr_key.replace("Kr", "Tr").replace("kr", "tr").replace("KR", "TR")
 
-def ensure_cn_fields(data, jp_fields):
-    # Ensure CN fields exist (temporary for mapping)
-    modified = False
-    for item in data:
-        for jp_field in jp_fields:
-            cn_field = get_cn_field(jp_field)
-            if cn_field not in item or item[cn_field] in (None, ""):
-                jp_value = item.get(jp_field, "")
-                item[cn_field] = jp_value
-                modified = True
-    return modified
+def is_jp_field(field_name):
+    """判断字段是否为JP字段"""
+    jp_indicators = ['JP', 'Jp', 'jp', 'Japanese']
+    return any(indicator in field_name for indicator in jp_indicators)
 
-def remove_additional_fields(data, jp_fields):
-    # Remove temporary CN fields and any Tr/Re fields after processing
-    for item in data:
-        for jp_field in jp_fields:
-            # Remove CN fields
-            cn_field = get_cn_field(jp_field)
-            if cn_field in item:
-                del item[cn_field]
-            
-            # Remove Re fields (derived from JP)
-            re_field = get_re_key(jp_field)
-            if re_field in item:
-                del item[re_field]
-            
-            # Remove Tr fields (derived from KR, but we'll check anyway)
-            tr_field = get_tr_key(jp_field)
-            if tr_field in item:
-                del item[tr_field]
+def is_kr_field(field_name):
+    """判断字段是否为KR字段"""
+    kr_indicators = ['Kr', 'kr', 'KR', 'Korean', 'ScriptKr']
+    return any(indicator in field_name for indicator in kr_indicators)
 
 def replace_jp_with_cn(modified_dir, config_path):
     modified_dir = Path(modified_dir)
@@ -76,7 +55,6 @@ def replace_jp_with_cn(modified_dir, config_path):
         processed_files = 0
         replaced_items = 0
         skipped_empty = 0
-        removed_fields = 0
 
         # Process all files in DBSchema and ExcelTable
         for schema_type, schema in cfg.items():
@@ -97,64 +75,92 @@ def replace_jp_with_cn(modified_dir, config_path):
                         break
                 
                 if source_file is None:
-                    continue  # Skip if file not found
+                    print(f"File not found: {filename}")
+                    continue
                 
                 source_data = load_json(source_file)
-                key_field = fields[0]
-                jp_fields = fields[1:] if len(fields) > 2 else [fields[1]]
-
-                # Temporarily ensure CN fields exist for mapping
-                ensure_cn_fields(source_data, jp_fields)
-
-                # Build text mapping
-                text_maps = {field: {} for field in jp_fields}
-                for item in source_data:
-                    key = item.get(key_field)
-                    if key is None:
-                        continue
+                if not source_data:
+                    print(f"Empty data: {filename}")
+                    continue
                     
-                    for jp_field in jp_fields:
-                        cn_field = get_cn_field(jp_field)
-                        text_to_use = item.get(cn_field, item.get(jp_field, ""))
-                        text_maps[jp_field].setdefault(key, []).append(text_to_use)
+                key_field = fields[0]
+                
+                # 只提取真正的JP字段（包含JP、Jp、jp的字段）
+                jp_fields = [field for field in fields[1:] if is_jp_field(field)]
+                
+                if not jp_fields:
+                    print(f"No JP fields found in {filename}, skipping")
+                    continue
+                
+                print(f"\nProcessing {filename}:")
+                print(f"Key field: {key_field}")
+                print(f"JP fields: {jp_fields}")
+                print(f"Original fields in data: {list(source_data[0].keys())}")
 
-                # Perform replacements
+                # 第一步：用CN字段的内容替换JP字段的内容
                 file_replaced = 0
                 file_skipped = 0
-                counters = {field: {} for field in jp_fields}
                 
                 for item in source_data:
-                    key = item.get(key_field)
-                    if key is None:
-                        continue
-                    
                     for jp_field in jp_fields:
-                        if key not in text_maps[jp_field]:
-                            continue
+                        cn_field = get_cn_field(jp_field)
                         
-                        idx = counters[jp_field].get(key, 0)
-                        if idx >= len(text_maps[jp_field][key]):
-                            continue
-                        
-                        new_text = text_maps[jp_field][key][idx]
-                        original = item.get(jp_field, "")
-                        
-                        if new_text == original:
-                            file_skipped += 1
-                        else:
-                            item[jp_field] = new_text
-                            file_replaced += 1
-                        
-                        counters[jp_field][key] = idx + 1
+                        # 如果存在CN字段，就用CN字段的内容替换JP字段
+                        if cn_field in item:
+                            cn_text = item[cn_field]
+                            jp_text = item.get(jp_field, "")
+                            
+                            if cn_text != jp_text:
+                                item[jp_field] = cn_text
+                                file_replaced += 1
+                            else:
+                                file_skipped += 1
 
-                # Remove temporary CN fields and any Tr/Re fields
-                remove_additional_fields(source_data, jp_fields)
+                # 第二步：删除CN、Re、Tr字段，但保留JP字段和KR字段！
+                fields_to_remove = []
+                
+                # 删除与JP字段对应的CN和Re字段
+                for jp_field in jp_fields:
+                    cn_field = get_cn_field(jp_field)
+                    re_field = get_re_key(jp_field)
+                    
+                    if cn_field in source_data[0] and cn_field not in fields_to_remove:
+                        fields_to_remove.append(cn_field)
+                    if re_field in source_data[0] and re_field not in fields_to_remove:
+                        fields_to_remove.append(re_field)
+                
+                # 删除与KR字段对应的Tr字段
+                for field in list(source_data[0].keys()):
+                    if is_kr_field(field):
+                        tr_field = get_tr_key(field)
+                        if tr_field in source_data[0] and tr_field not in fields_to_remove:
+                            fields_to_remove.append(tr_field)
+                
+                # 确保不删除JP字段和KR字段！
+                all_fields_to_keep = jp_fields + [field for field in source_data[0].keys() if is_kr_field(field)] + [key_field, 'VoiceId']
+                for field in all_fields_to_keep:
+                    if field in fields_to_remove:
+                        fields_to_remove.remove(field)
+                
+                print(f"Fields to remove: {fields_to_remove}")
+                
+                # 删除指定的字段
+                for item in source_data:
+                    for field in fields_to_remove:
+                        if field in item:
+                            del item[field]
+                
+                # 保存前检查保留的字段
+                remaining_fields = list(source_data[0].keys()) if source_data else []
+                print(f"Remaining fields after processing: {remaining_fields}")
                 
                 save_json(source_file, source_data)
                 
                 processed_files += 1
                 replaced_items += file_replaced
                 skipped_empty += file_skipped
+
+                print(f"  - Replaced: {file_replaced}, Skipped: {file_skipped}")
 
         # Print final summary
         print("\nProcessing summary:")

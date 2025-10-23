@@ -78,10 +78,12 @@ def process_special_pair(jp_file, cn_file, output_dir):
 
     old_value_counter = defaultdict(int)
     for item in cn_data:
+        # 保持 VoiceId 的原始数据类型
+        voice_id = item.get("VoiceId", 0)
         key = (
             item.get("ScriptKr", ""),
             item.get("TextJp", ""),
-            item.get("VoiceId", "")
+            voice_id
         )
         old_value_counter[key] += 1
 
@@ -93,10 +95,12 @@ def process_special_pair(jp_file, cn_file, output_dir):
         cn_item = cn_data[index]
         jp_item = jp_data[index]
 
+        # 保持 VoiceId 的原始数据类型
+        jp_voice_id = jp_item.get("VoiceId", 0)
         old_key = (
             jp_item.get("ScriptKr", ""),
             jp_item.get("TextJp", ""),
-            jp_item.get("VoiceId", "") or ""
+            jp_voice_id
         )
         total_occurrences = old_value_counter[old_key]
 
@@ -105,7 +109,7 @@ def process_special_pair(jp_file, cn_file, output_dir):
 
         new_scriptkr = cn_item.get("ScriptKr", "")
         new_textjp = cn_item.get("TextJp", "")
-        new_voiceid = cn_item.get("VoiceId", "")
+        new_voiceid = cn_item.get("VoiceId", 0)  # 保持整数类型
 
         if old_key[0] == new_scriptkr and old_key[1] == new_textjp:
             continue
@@ -117,7 +121,7 @@ def process_special_pair(jp_file, cn_file, output_dir):
             "replacement_count": 1
         }
 
-        if new_voiceid:
+        if new_voiceid != 0:
             voice_mappings.append(mapping)
         else:
             no_voice_mapping = {
