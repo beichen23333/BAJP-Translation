@@ -109,21 +109,14 @@ def process_special_pair(jp_file, cn_file, output_dir):
 
         new_scriptkr = cn_item.get("ScriptKr", "")
         new_textjp = cn_item.get("TextJp", "")
-        new_voiceid = cn_item.get("VoiceId", 0)  # 保持整数类型
+        new_voiceid = cn_item.get("VoiceId", 0)  # 保持原始数据类型
 
         if old_key[0] == new_scriptkr and old_key[1] == new_textjp:
             continue
 
-        mapping = {
-            "old": [old_key[0], old_key[1], old_key[2]],
-            "new": [new_scriptkr, new_textjp, new_voiceid],
-            "target_index": target_index,
-            "replacement_count": 1
-        }
-
-        if new_voiceid != 0:
-            voice_mappings.append(mapping)
-        else:
+        # 根据国服 VoiceId 的值决定处理类型
+        # 如果 VoiceId 为空字符串、0 或 None，则使用第二类型（不包含 VoiceId）
+        if new_voiceid in ("", 0, None):
             no_voice_mapping = {
                 "old": [old_key[0], old_key[1]],
                 "new": [new_scriptkr, new_textjp],
@@ -131,6 +124,15 @@ def process_special_pair(jp_file, cn_file, output_dir):
                 "replacement_count": 1
             }
             no_voice_mappings.append(no_voice_mapping)
+        else:
+            # VoiceId 不为空，使用第一类型（包含 VoiceId）
+            mapping = {
+                "old": [old_key[0], old_key[1], old_key[2]],
+                "new": [new_scriptkr, new_textjp, new_voiceid],
+                "target_index": target_index,
+                "replacement_count": 1
+            }
+            voice_mappings.append(mapping)
 
     output = []
     if voice_mappings:
